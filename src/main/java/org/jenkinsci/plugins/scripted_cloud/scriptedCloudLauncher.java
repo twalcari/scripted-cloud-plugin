@@ -40,6 +40,7 @@ import static hudson.model.TaskListener.NULL;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.util.concurrent.Future;
+import hudson.slaves.JNLPLauncher;
 
 /**
  *
@@ -58,6 +59,7 @@ public class scriptedCloudLauncher extends ComputerLauncher {
     private scriptedCloud vs = null;
     private int LimitedTestRunCount = 0;
     private Boolean disconnectCustomAction = Boolean.FALSE;
+
     
     private Boolean enableLaunch = Boolean.FALSE;
 
@@ -265,11 +267,14 @@ public class scriptedCloudLauncher extends ComputerLauncher {
     		scriptedCloud.Log(slaveComputer, taskListener, "Do nothing for this slave");
     		return;
     	}
-    	if (slaveComputer.starting() || slaveComputer.stopping() || slaveComputer.stopped()) {
-    		scriptedCloud.Log(slaveComputer, taskListener, "Slave is not in stoppable state");
-			//super.afterDisconnect(s, taskListener);
-    		return;    		
+	if (delegate instanceof JNLPLauncher) 
+	{
+    		if (slaveComputer.starting() || slaveComputer.stopping() || slaveComputer.stopped()) {
+    			scriptedCloud.Log(slaveComputer, taskListener, "Slave is not in stoppable state");
+				//super.afterDisconnect(s, taskListener);
+	    		return;    		
     	}
+	}
     	//if (disconnectCustomAction == Boolean.FALSE) {
     	//	scriptedCloud.Log("Not called from stopslave .. skipping");
     	//	delegate.afterDisconnect(slaveComputer, taskListener);
