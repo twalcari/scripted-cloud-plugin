@@ -267,7 +267,7 @@ public class scriptedCloudLauncher extends ComputerLauncher {
     		scriptedCloud.Log(slaveComputer, taskListener, "Do nothing for this slave");
     		return;
     	}
-	if (delegate instanceof JNLPLauncher) 
+	if (delegate instanceof JNLPLauncher == false) 
 	{
     		if (slaveComputer.starting() || slaveComputer.stopping() || slaveComputer.stopped()) {
     			scriptedCloud.Log(slaveComputer, taskListener, "Slave is not in stoppable state");
