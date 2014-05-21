@@ -58,37 +58,23 @@ public class scriptedCloudSlaveComputer extends SlaveComputer {
     public SC_SLAVE_STATE state;
     public SC_SLAVE_STATE prevState;
     
-    private Boolean forceLaunch;
-    private String vmDescription;
-    private String vmName;
-    private String vmPlatform;
-    private String vmExtraParams;
-    private String vmGroup;
-    private String snapName;
-    private String idleActionString;
     private MACHINE_ACTION idleAction;
+
+    private scriptedCloudSlave cloudSlave; 
     
     private boolean needed;
     
-    public scriptedCloudSlaveComputer(Slave slave
-            , String vmDescription
-            , String vmName, String vmPlatform, String vmGroup
-            , String snapName, String extraParams
-            , Boolean forceLaunch
-            , String idleOption) {
+    public scriptedCloudSlaveComputer(scriptedCloudSlave slave
+            ) {
         super(slave);
+        cloudSlave = slave;
+        
     	isStarting = Boolean.FALSE;
     	isDisconnecting = Boolean.FALSE;
     	state = SC_SLAVE_STATE.INITIAL;
     	prevState = state;
         this.forceLaunch = forceLaunch;
-        this.vmDescription = vmDescription;
-        this.vmName = vmName;
-        this.vmPlatform = vmPlatform;
-        this.vmExtraParams = extraParams;
-        this.vmGroup = vmGroup;
-        this.snapName = snapName;    
-        this.idleActionString = idleOption;
+
        
         if ("Shutdown".equals(idleOption)) {
             idleAction = MACHINE_ACTION.SHUTDOWN;
@@ -104,11 +90,11 @@ public class scriptedCloudSlaveComputer extends SlaveComputer {
     }
     
     public void fillEnv(HashMap envMap) {
-		envMap.put("SCVM_NAME", this.vmName);
-		envMap.put("SCVM_SNAPNAME", this.snapName);
-		envMap.put("SCVM_PLATFORM", this.vmPlatform);
+		envMap.put("SCVM_NAME", this.cloudSlave.getVmName());
+		envMap.put("SCVM_SNAPNAME", this.cloudSlave.getSnapName());
+		envMap.put("SCVM_PLATFORM", this.cloudSlave.getVmPlatform());
 		envMap.put("SCVM_EXTRAPARAMS", this.vmExtraParams);    		
-		envMap.put("SCVM_GROUP", this.vmGroup);
+		envMap.put("SCVM_GROUP", this.cloudSlave.getVmGroup());
 		switch(idleAction) {
 		case SHUTDOWN:
 			envMap.put("SCVM_STOPACTION", "shutdown");
@@ -138,8 +124,8 @@ public class scriptedCloudSlaveComputer extends SlaveComputer {
     
     public String toString() {
     	return String.format("%s[state:%s, idleaction:%s] "
-    			,this.vmName , getState()
-    		    ,idleActionString);
+    			,this.cloudSlave.getVmName(); , getState()
+    		    ,cloudSlave.getIdleOption());
     }
     
     //============= set/get functions
@@ -197,11 +183,11 @@ public class scriptedCloudSlaveComputer extends SlaveComputer {
     
     //member get/set
     public String getVmName() {
-        return vmName;
+        return cloudSlave.getVmName();
     }
 
     public String getVsDescription() {
-        return vmDescription;
+        return cloudSlave.getVmDescription();
     }
     
     public String getState() {

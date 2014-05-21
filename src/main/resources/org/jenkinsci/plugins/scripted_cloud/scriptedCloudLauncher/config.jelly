@@ -23,8 +23,11 @@
         </j:choose>
     </j:if>
 
-<br>TEST TEST TEST</br>
-    <form method="get" action="launch">
-        <f:submit value="${%Launch}" />
-    </form>
+<l:isAdmin>
+                    <form method="get" action="disconnect">
+                        <f:submit value="${%Stop Slave VM}" />
+                    </form>
+         </l:isAdmin>
+
+
 </j:jelly>

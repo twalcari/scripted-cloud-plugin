@@ -56,14 +56,14 @@ import org.kohsuke.stapler.QueryParameter;
  */
 public class scriptedCloudSlave extends Slave {
 
-    private  String vsDescription;
-    private  String vmName;
-    private  String snapName;
-    private  String vmPlatform;
-    private  String vmExtraParams;
-    private  String vmGroup;
-    private  String idleOption;
-    private  Boolean forceLaunch;    
+    public  String vsDescription;
+    public  String vmName;
+    public  String snapName;
+    public  String vmPlatform;
+    public  String vmExtraParams;
+    public  String vmGroup;
+    public  String idleOption;
+    public  Boolean forceLaunch;    
     
     private Integer LimitedTestRunCount = 0; // If limited test runs enabled, the number of tests to limit the slave too.
     private transient Integer NumberOfLimitedTestRuns = 0;
@@ -85,7 +85,7 @@ public class scriptedCloudSlave extends Slave {
             throws FormException, IOException {
         super(name, nodeDescription, remoteFS, numExecutors, mode, labelString,
         		
-                new scriptedCloudLauncher(delegateLauncher, vsDescription, vmName)
+                new scriptedCloudLauncher(delegateLauncher)
         
         		,retentionStrategy, nodeProperties);
         this.vsDescription = vsDescription;
@@ -164,12 +164,7 @@ public class scriptedCloudSlave extends Slave {
     @Override
     public Computer createComputer() {
     	scriptedCloud.Log("createComputer " + name + "\n");
-        return new scriptedCloudSlaveComputer(this
-                , this.vsDescription
-                ,  this.vmName,  this.vmPlatform,  this.vmGroup
-                ,  this.snapName,  this.vmExtraParams
-                ,  this.forceLaunch
-                ,  this.idleOption);
+        return new scriptedCloudSlaveComputer(this);
     }
         
     public boolean StartLimitedTestRun(Run r, TaskListener listener) {
@@ -213,8 +208,6 @@ public class scriptedCloudSlave extends Slave {
             	taskListener.getLogger().println("sCCL::not interested\n");
                 return;
             }            
-            //scriptedCloudLauncher vsL = (scriptedCloudLauncher) ((SlaveComputer) c).getLauncher();
-            //scriptedCloud vsC = vsL.findOurVsInstance();
             //if (!vsC.markVMOnline(c.getDisplayName(), vsL.getVmName()))
             //    throw new AbortException("The scripted cloud will not allow this slave to start at this time.");
         }                

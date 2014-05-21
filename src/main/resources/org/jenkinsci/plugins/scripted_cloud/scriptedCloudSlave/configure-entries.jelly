@@ -1,7 +1,7 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form">
              
-    <f:entry title="${%scripted Cloud Instance}" help="/plugin/scripted-cloud/slave-vsDescription.html">
+    <f:entry title="${%scripted Cloud Instance}" help="/plugin/scripted-cloud-plugin/slave-vsDescription.html">
         <select class="setting-input" name="vsDescription" value="${it.vsDescription}" field="vsDescription">
             <option>Select a scripted Cloud instance...</option>
             <j:forEach var="d" items="${descriptor.getscriptedClouds()}" varStatus="loop">
@@ -16,20 +16,20 @@
         <f:textbox field="nodeDescription"/>
     </f:entry>
 
-    <f:entry title="${%Virtual Machine Name}" help="/plugin/scripted-cloud/slave-vmName.html">
+    <f:entry title="${%Virtual Machine Name}" help="/plugin/scripted-cloud-plugin/slave-vmName.html">
         <f:textbox field="vmName"></f:textbox>
     </f:entry>
-    <f:entry title="${%Virtual Machine Platform}" help="/plugin/scripted-cloud/slave-vmPlatform.html">
+    <f:entry title="${%Virtual Machine Platform}" help="/plugin/scripted-cloud-plugin/slave-vmPlatform.html">
         <f:textbox field="vmPlatform"></f:textbox>
     </f:entry>
-    <f:entry title="${%Virtual Machine Group}" help="/plugin/scripted-cloud/slave-vmGroup.html">
+    <f:entry title="${%Virtual Machine Group}" help="/plugin/scripted-cloud-plugin/slave-vmGroup.html">
         <f:textbox field="vmGroup"></f:textbox>
     </f:entry>
-    <f:entry title="${%Snapshot Name}" help="/plugin/scripted-cloud/slave-snapName.html">
+    <f:entry title="${%Snapshot Name}" help="/plugin/scripted-cloud-plugin/slave-snapName.html">
         <f:textbox field="snapName"></f:textbox> 
     </f:entry>
 
-    <f:entry title="${%Extra Params}" help="/plugin/scripted-cloud/slave-vmExtraParams.html">
+    <f:entry title="${%Extra Params}" help="/plugin/scripted-cloud-plugin/slave-vmExtraParams.html">
         <f:textbox field="vmExtraParams"></f:textbox>
     </f:entry>
 
@@ -45,7 +45,7 @@
     <f:slave-mode name="mode" node="${it}"/>
 
     <f:entry title="${%Force Launch}" description="${%Start VM if its not running already.}" 
-help="/plugin/scripted-cloud/slave-forceLaunch.html">
+help="/plugin/scripted-cloud-plugin/slave-forceLaunch.html">
         <f:checkbox field="forceLaunch"/>
     </f:entry>
     
@@ -101,7 +101,7 @@ description="${%Number of builds to allow before disconnecting the agent; use 0 
     </j:if>
 
     <f:entry title="${%What to do when the slave is disconnected}" field="idleOption" name="idleOption" 
-help="/plugin/scripted-cloud/slave-idleOption.html">
+help="/plugin/scripted-cloud-plugin/slave-idleOption.html">
         <select class="setting-input" name="idleOption">
             <j:forEach var="t" items="${descriptor.getIdleOptions()}" varStatus="loop">
                 <f:option value="${t}" selected="${t==instance.idleOption}">${t}</f:option>

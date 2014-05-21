@@ -50,15 +50,13 @@ public class scriptedCloudLauncher extends ComputerLauncher {
 
     
 
-    private String vsDescription;
-    private String vmName;
-    
     private ComputerLauncher delegate;
     //private Boolean isStarting = Boolean.FALSE;
     //private Boolean isDisconnecting = Boolean.FALSE;
     private scriptedCloud vs = null;
     private int LimitedTestRunCount = 0;
     private Boolean disconnectCustomAction = Boolean.FALSE;
+    private Integer secToWaitOnline = 10*60;
 
     
     private Boolean enableLaunch = Boolean.FALSE;
@@ -66,14 +64,11 @@ public class scriptedCloudLauncher extends ComputerLauncher {
 
     @DataBoundConstructor
     public scriptedCloudLauncher(ComputerLauncher delegate
-    		, String vsDescription, String vmName) {
+    		) {
         super();
         this.delegate = delegate;
         //this.isStarting = Boolean.FALSE;
         this.LimitedTestRunCount = 0; //Util.tryParseNumber(LimitedTestRunCount, 0).intValue();
-        this.vsDescription = vsDescription;
-        this.vmName = vmName;
-        scriptedCloud.Log("scriptedCloudLauncher constructor: vmName:" + vmName);
         vs = findOurVsInstance();
     }
     
@@ -82,20 +77,6 @@ public class scriptedCloudLauncher extends ComputerLauncher {
     }
     public void disableLaunch() {
     	enableLaunch = Boolean.FALSE;
-    }
-
-    public scriptedCloud findOurVsInstance() throws RuntimeException {
-        if (vsDescription != null && vmName != null) {
-            scriptedCloud vs = null;
-            for (Cloud cloud : Hudson.getInstance().clouds) {
-                if (cloud instanceof scriptedCloud && ((scriptedCloud) cloud).getVsDescription().equals(vsDescription)) {
-                    vs = (scriptedCloud) cloud;
-                    return vs;
-                }
-            }
-        }
-        scriptedCloud.Log("Could not find our scripted Cloud instance!");
-        throw new RuntimeException("Could not find our scripted Cloud instance!");
     }
    
     private CommandInterpreter getCommandInterpreter(String script) {
@@ -126,49 +107,21 @@ public class scriptedCloudLauncher extends ComputerLauncher {
         */
     }
 
-    @Override
-    public void launch(SlaveComputer slaveComputer, TaskListener listener)
-    throws IOException, InterruptedException {
-		//super.launch(slaveComputer, listener);
-    	scriptedCloudSlaveComputer s = (scriptedCloudSlaveComputer)slaveComputer;
-		scriptedCloud.Log(s, listener, "Event - Launch. slave:" + s);
-		if (s.isTemporarilyOffline()) {
-			scriptedCloud.Log(s, listener, "Not launching VM because it's not accepting tasks; temporarily offline");
-			//super.launch(slaveComputer, listener);
-			return;
-		}
-		//if (s.needed() == false) {
-		//	scriptedCloud.Log(slaveComputer, listener, "not needed yet");
-		//	//super.launch(slaveComputer, listener);
-		//}
-
-		// Slaves that take a while to start up make get multiple launch
-		// requests from Jenkins.  
-		if (s.stopped() || s.initialized()) {
-			scriptedCloud.Log(slaveComputer, listener, "its ready to launch");
-		}
-		else
-		{
-			scriptedCloud.Log(slaveComputer, listener, "Slave is already being launched");
-			return;
-		}
-    	try {
-    		s.setStarting();
+   public void run(scriptedCloudSlaveComputer s , TaskListener listener)
+   {
+         s.setStarting();
 
     		File f = new File(vs.getStartScriptFile());
     		CommandInterpreter shell = getCommandInterpreter(vs.getStartScriptFile());
-    		scriptedCloud.Log(slaveComputer, listener,"script file:" + vs.getStartScriptFile());
+    		scriptedCloud.Log(s, listener,"script file:" + vs.getStartScriptFile());
     		//scriptedCloud.Log("file.getpath:" + f.getParent());
     		FilePath root = new FilePath(new File("/"));
     		FilePath script = shell.createScriptFile(root);
-    		//scriptedCloud.Log("root path:" + root + ", script:" + script);
-    		//shell.buildCommandLine(script);
-    		//listener.getLogger().println("running start script");
     		int r = 0;
     		HashMap envMap = new HashMap();    		
     		s.fillEnv(envMap);
     		envMap.put("SCVM_ACTION","start");
-    		scriptedCloud.Log(slaveComputer, listener, "start env:" + envMap);
+    		scriptedCloud.Log(s, listener, "start env:" + envMap);
     		shell.buildCommandLine(script);
     		r = root.createLauncher(listener).launch().cmds(shell.buildCommandLine(script))
     		.envs(envMap)
@@ -179,14 +132,34 @@ public class scriptedCloudLauncher extends ComputerLauncher {
     		}
     		scriptedCloud.Log("script done:" + vs.getStartScriptFile());
             if (delegate.isLaunchSupported()) {
-                // Delegate is going to do launch.
-                //Thread.sleep(launchDelay * 1000);
                 delegate.launch(slaveComputer, listener);
-            }
+
+   }
+
+    @Override
+    public void launch(SlaveComputer slaveComputer, TaskListener listener)
+    throws IOException, InterruptedException {
+		
+    	scriptedCloudSlaveComputer s = (scriptedCloudSlaveComputer)slaveComputer;
+		scriptedCloud.Log(s, listener, "Event - Launch. slave:" + s);
+		if (s.isTemporarilyOffline()) {
+			scriptedCloud.Log(s, listener, "Not launching VM because it's not accepting tasks; temporarily offline");
+			return;
+		}
+
+		// Slaves that take a while to start up make get multiple launch
+		// requests from Jenkins.  
+		if (s.stopped() || s.initialized()) {
+			scriptedCloud.Log(slaveComputer, listener, "its ready to launch");
+		}
+    	try {
+    		this.run();
+                    }
             else {
     			scriptedCloud.Log(s, listener,"delegate launch not supported");                        
-                for (int i = 0; i <= 60; i++) {
+                for (int i = 0; i <= secToWaitOnline; i++) {
                     Thread.sleep(1000);
+	    scriptedCloud.Log(s, listener,"Awaiting the slave to come online");  
                     if (s.isOnline()) {
                         break;
                     }
@@ -208,19 +181,7 @@ public class scriptedCloudLauncher extends ComputerLauncher {
     		scriptedCloud.Log(slaveComputer, listener, "launch error:"+ e);
     		throw new RuntimeException(e);
     	}
-    	//catch (SocketException e) {
-    	//	scriptedCloud.Log("Socket Exception in delegate.launch()");
-    	//	s.revertState();
-    	//}
-    	//catch (IOException e) {
-    	//	scriptedCloud.Log("IO Exception in delegate.launch()");
-    	//	s.revertState();
-    	//} catch (Exception e) {    		
-    	//	scriptedCloud.Log("launch error:"+ e);
-    	//	s.revertState();
-    	//	throw new RuntimeException(e);            
-    	//}
-    	//s.revertState();
+    	
     }
 
 
@@ -241,6 +202,39 @@ public class scriptedCloudLauncher extends ComputerLauncher {
     	delegate.beforeDisconnect(slaveComputer, taskListener);
     	//super.beforeDisconnect(slaveComputer, taskListener);
     }
+
+   public boolean stop(scriptedCloudSlaveComputer slaveComputer , TaskListener taskListener )
+   {
+          slaveComputer.setStopping();    
+
+        	delegate.afterDisconnect(slaveComputer, taskListener);        	
+        	
+            HashMap envMap = new HashMap();
+            slaveComputer.fillEnv(envMap);
+	    	envMap.put("SCVM_ACTION","stop");
+    		scriptedCloud.Log(slaveComputer, taskListener, "Calling stop script with env:" + envMap);
+        	String scriptToRun = vs.getStopScriptFile();
+        	//scriptedCloud.Log("runScript:" + scriptToRun);        	
+            //scriptedCloud.Log(slaveComputer, taskListener, "running script");
+            File f = new File(scriptToRun);
+        	CommandInterpreter shell = getCommandInterpreter(scriptToRun);
+            //scriptedCloud.Log("sript file:" + scriptToRun);
+            //scriptedCloud.Log("file.getpath:" + f.getParent());            
+            FilePath root = new FilePath(new File("/"));
+            FilePath script = shell.createScriptFile(root);
+        	//scriptedCloud.Log("root path:" + root + ", script:" + script);
+            int r = root.createLauncher(taskListener).launch().cmds(shell.buildCommandLine(script))
+                    .envs(envMap /*Collections.singletonMap("LABEL","s")*/)
+                    .stdout(taskListener).pwd(root).join();
+            if (r!=0) {
+                slaveComputer.revertState();
+                throw new AbortException("The script failed:" + r);
+            }
+            slaveComputer.setStopped();
+       
+            scriptedCloud.Log(slaveComputer, taskListener, "Event - afterdisconnect done");
+
+   }
 
     @Override
     public synchronized void afterDisconnect(SlaveComputer s,
@@ -286,11 +280,7 @@ public class scriptedCloudLauncher extends ComputerLauncher {
     		//delegate.afterDisconnect(slaveComputer, taskListener);
     		return;
     	}*/
-/*        if (slaveComputer.isDisconnecting == Boolean.TRUE) {
-        	scriptedCloud.Log(slaveComputer, taskListener, "Already disconnecting on a separate thread");
-        	//delegate.afterDisconnect(slaveComputer, taskListener);
-            return;
-        }*/
+
         
         if (slaveComputer.isTemporarilyOffline()) {
         	scriptedCloud.Log(slaveComputer, taskListener, "Not disconnecting VM because it's not accepting tasks");
@@ -299,42 +289,8 @@ public class scriptedCloudLauncher extends ComputerLauncher {
         }
             
         try {
-
-        	slaveComputer.setStopping();    
-
-        	delegate.afterDisconnect(slaveComputer, taskListener);        	
-        	
-            HashMap envMap = new HashMap();
-            slaveComputer.fillEnv(envMap);
-	    	envMap.put("SCVM_ACTION","stop");
-    		scriptedCloud.Log(slaveComputer, taskListener, "Calling stop script with env:" + envMap);
-        	String scriptToRun = vs.getStopScriptFile();
-        	//scriptedCloud.Log("runScript:" + scriptToRun);        	
-            //scriptedCloud.Log(slaveComputer, taskListener, "running script");
-            File f = new File(scriptToRun);
-        	CommandInterpreter shell = getCommandInterpreter(scriptToRun);
-            //scriptedCloud.Log("sript file:" + scriptToRun);
-            //scriptedCloud.Log("file.getpath:" + f.getParent());            
-            FilePath root = new FilePath(new File("/"));
-            FilePath script = shell.createScriptFile(root);
-        	//scriptedCloud.Log("root path:" + root + ", script:" + script);
-            int r = root.createLauncher(taskListener).launch().cmds(shell.buildCommandLine(script))
-                    .envs(envMap /*Collections.singletonMap("LABEL","s")*/)
-                    .stdout(NULL).pwd(root).join();
-            if (r!=0) {
-                slaveComputer.revertState();
-                throw new AbortException("The script failed:" + r);
-            }
-            slaveComputer.setStopped();
-/*            try {
-                scriptedCloud.Log(slaveComputer, taskListener, "delegate afterdisconnect");
-            	super.afterDisconnect(s, taskListener);
-            } catch(Exception e) {
-            	scriptedCloud.Log(slaveComputer, taskListener, 
-            				"Error in delegate.afterDisconnect");
-            }*/
-            scriptedCloud.Log(slaveComputer, taskListener, "Event - afterdisconnect done");
-            return;
+	stop(slaveComputer, taskListener);
+        	            return;
             //**********************************
         } catch (Throwable t) {
         	slaveComputer.revertState();
@@ -350,13 +306,6 @@ public class scriptedCloudLauncher extends ComputerLauncher {
         return delegate;
     }
 
-    public String getVmName() {
-        return vmName;
-    }
-
-    public String getVsDescription() {
-        return vsDescription;
-    }
 
     public Integer getLimitedTestRunCount() {
         return LimitedTestRunCount;
