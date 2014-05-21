@@ -85,7 +85,7 @@ public class scriptedCloudSlave extends Slave {
             throws FormException, IOException {
         super(name, nodeDescription, remoteFS, numExecutors, mode, labelString,
         		
-                new scriptedCloudLauncher(delegateLauncher)
+                new scriptedCloudLauncher(delegateLauncher , vsDescription)
         
         		,retentionStrategy, nodeProperties);
         this.vsDescription = vsDescription;
@@ -208,6 +208,8 @@ public class scriptedCloudSlave extends Slave {
             	taskListener.getLogger().println("sCCL::not interested\n");
                 return;
             }            
+            //scriptedCloudLauncher vsL = (scriptedCloudLauncher) ((SlaveComputer) c).getLauncher();
+            //scriptedCloud vsC = vsL.findOurVsInstance();
             //if (!vsC.markVMOnline(c.getDisplayName(), vsL.getVmName()))
             //    throw new AbortException("The scripted cloud will not allow this slave to start at this time.");
         }                

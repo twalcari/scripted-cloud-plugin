@@ -73,9 +73,8 @@ public class scriptedCloudSlaveComputer extends SlaveComputer {
     	isDisconnecting = Boolean.FALSE;
     	state = SC_SLAVE_STATE.INITIAL;
     	prevState = state;
-        this.forceLaunch = forceLaunch;
 
-       
+        String idleOption = cloudSlave.getIdleOption();
         if ("Shutdown".equals(idleOption)) {
             idleAction = MACHINE_ACTION.SHUTDOWN;
         } else if ("Shutdown and Revert".equals(idleOption)) {
@@ -93,7 +92,7 @@ public class scriptedCloudSlaveComputer extends SlaveComputer {
 		envMap.put("SCVM_NAME", this.cloudSlave.getVmName());
 		envMap.put("SCVM_SNAPNAME", this.cloudSlave.getSnapName());
 		envMap.put("SCVM_PLATFORM", this.cloudSlave.getVmPlatform());
-		envMap.put("SCVM_EXTRAPARAMS", this.vmExtraParams);    		
+		envMap.put("SCVM_EXTRAPARAMS", this.cloudSlave.getVmExtraParams());    		
 		envMap.put("SCVM_GROUP", this.cloudSlave.getVmGroup());
 		switch(idleAction) {
 		case SHUTDOWN:
@@ -109,7 +108,7 @@ public class scriptedCloudSlaveComputer extends SlaveComputer {
 			envMap.put("SCVM_STOPACTION", "nothing");
 			break;
 		}		
-		if (forceLaunch == Boolean.TRUE) {
+		if (cloudSlave.getForceLaunch() == Boolean.TRUE) {
 			envMap.put("SCVM_FORCESTART", "yes");
 		}
 		else {
@@ -124,7 +123,7 @@ public class scriptedCloudSlaveComputer extends SlaveComputer {
     
     public String toString() {
     	return String.format("%s[state:%s, idleaction:%s] "
-    			,this.cloudSlave.getVmName(); , getState()
+    			,this.cloudSlave.getVmName() , getState()
     		    ,cloudSlave.getIdleOption());
     }
     
@@ -187,7 +186,7 @@ public class scriptedCloudSlaveComputer extends SlaveComputer {
     }
 
     public String getVsDescription() {
-        return cloudSlave.getVmDescription();
+        return cloudSlave.getVsDescription();
     }
     
     public String getState() {

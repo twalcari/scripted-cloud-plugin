@@ -53,25 +53,37 @@ public class scriptedCloudLauncher extends ComputerLauncher {
     private ComputerLauncher delegate;
     //private Boolean isStarting = Boolean.FALSE;
     //private Boolean isDisconnecting = Boolean.FALSE;
-    private scriptedCloud vs = null;
     private int LimitedTestRunCount = 0;
     private Boolean disconnectCustomAction = Boolean.FALSE;
     private Integer secToWaitOnline = 10*60;
-
+    private scriptedCloudSlave cloudSlave;
     
     private Boolean enableLaunch = Boolean.FALSE;
 
 
     @DataBoundConstructor
-    public scriptedCloudLauncher(ComputerLauncher delegate
-    		) {
+    public scriptedCloudLauncher(ComputerLauncher delegate,
+    		String vsdescr) {
         super();
         this.delegate = delegate;
         //this.isStarting = Boolean.FALSE;
         this.LimitedTestRunCount = 0; //Util.tryParseNumber(LimitedTestRunCount, 0).intValue();
-        vs = findOurVsInstance();
     }
-    
+
+     public scriptedCloud findOurVsInstance(String vsDescription) throws RuntimeException {
+        if (vsDescription != "") {
+            scriptedCloud vs = null;
+            for (Cloud cloud : Hudson.getInstance().clouds) {
+                if (cloud instanceof scriptedCloud && ((scriptedCloud) cloud).getVsDescription().equals(vsDescription)) {
+                    vs = (scriptedCloud) cloud;
+                    return vs;
+                }
+            }
+        }
+        scriptedCloud.Log("Could not find our scripted Cloud instance!");
+        throw new RuntimeException("Could not find our scripted Cloud instance!");
+    }    
+
     public void enableLaunch() {
     	enableLaunch = Boolean.TRUE;
     }
@@ -107,10 +119,10 @@ public class scriptedCloudLauncher extends ComputerLauncher {
         */
     }
 
-   public void run(scriptedCloudSlaveComputer s , TaskListener listener)
-   {
+   public void run(scriptedCloudSlaveComputer s , TaskListener listener)  
+   throws IOException, InterruptedException  {
          s.setStarting();
-
+	scriptedCloud vs = findOurVsInstance(s.getVsDescription());
     		File f = new File(vs.getStartScriptFile());
     		CommandInterpreter shell = getCommandInterpreter(vs.getStartScriptFile());
     		scriptedCloud.Log(s, listener,"script file:" + vs.getStartScriptFile());
@@ -131,9 +143,7 @@ public class scriptedCloudLauncher extends ComputerLauncher {
     			throw new AbortException("The script failed:" + r + ", " + vs.getStartScriptFile());
     		}
     		scriptedCloud.Log("script done:" + vs.getStartScriptFile());
-            if (delegate.isLaunchSupported()) {
-                delegate.launch(slaveComputer, listener);
-
+          
    }
 
     @Override
@@ -153,24 +163,25 @@ public class scriptedCloudLauncher extends ComputerLauncher {
 			scriptedCloud.Log(slaveComputer, listener, "its ready to launch");
 		}
     	try {
-    		this.run();
-                    }
-            else {
-    			scriptedCloud.Log(s, listener,"delegate launch not supported");                        
-                for (int i = 0; i <= secToWaitOnline; i++) {
-                    Thread.sleep(1000);
-	    scriptedCloud.Log(s, listener,"Awaiting the slave to come online");  
-                    if (s.isOnline()) {
-                        break;
-                    }
-                }
-                if (!slaveComputer.isOnline()) {
-                	scriptedCloud.Log(s, listener, "Slave did not come online in allowed time");
-                	s.revertState();
-                    throw new IOException("Slave did not come online in allowed time");
-                }
-            }
-
+    		this.run(s , listener);
+                   
+		  if (delegate.isLaunchSupported()) 
+	                 	delegate.launch(slaveComputer, listener);
+	                else {
+			scriptedCloud.Log(s, listener,"delegate launch not supported");                        
+		                for (int i = 0; i <= secToWaitOnline; i++) {
+		                    Thread.sleep(1000);
+			    scriptedCloud.Log(s, listener,"Awaiting the slave to come online");  
+		                    if (s.isOnline()) {
+		                        break;
+	                	    }
+	                }
+	                if (!slaveComputer.isOnline()) {
+	                	scriptedCloud.Log(s, listener, "Slave did not come online in allowed time");
+	                	s.revertState();
+	                    throw new IOException("Slave did not come online in allowed time");
+	                }
+	            }
     		scriptedCloud.Log(slaveComputer, listener, "launch done");
     		s.setStarted();
     		return;
@@ -203,12 +214,13 @@ public class scriptedCloudLauncher extends ComputerLauncher {
     	//super.beforeDisconnect(slaveComputer, taskListener);
     }
 
-   public boolean stop(scriptedCloudSlaveComputer slaveComputer , TaskListener taskListener )
-   {
+   public void stop(scriptedCloudSlaveComputer slaveComputer , TaskListener taskListener ) 
+   throws IOException, InterruptedException  {
+
           slaveComputer.setStopping();    
 
         	delegate.afterDisconnect(slaveComputer, taskListener);        	
-        	
+        	scriptedCloud vs = findOurVsInstance(slaveComputer.getVsDescription());
             HashMap envMap = new HashMap();
             slaveComputer.fillEnv(envMap);
 	    	envMap.put("SCVM_ACTION","stop");
