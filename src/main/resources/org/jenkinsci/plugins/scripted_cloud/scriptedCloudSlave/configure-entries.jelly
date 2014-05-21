@@ -12,25 +12,25 @@
         </select>
     </f:entry>
 
-    <f:entry title="${%Description}" help="/help/system-config/master-slave/description.html">
-        <f:textbox field="nodeDescription"/>
+    <f:entry title="${%Description}" help="/help/system-config/master-slave/description.html" field="nodeDescription">
+        <f:textbox/>
     </f:entry>
 
-    <f:entry title="${%Virtual Machine Name}" help="/plugin/scripted-cloud-plugin/slave-vmName.html">
-        <f:textbox field="vmName"></f:textbox>
+    <f:entry title="${%Virtual Machine Name}" help="/plugin/scripted-cloud-plugin/slave-vmName.html" field="vmName">
+        <f:textbox></f:textbox>
     </f:entry>
-    <f:entry title="${%Virtual Machine Platform}" help="/plugin/scripted-cloud-plugin/slave-vmPlatform.html">
-        <f:textbox field="vmPlatform"></f:textbox>
+    <f:entry title="${%Virtual Machine Platform}" help="/plugin/scripted-cloud-plugin/slave-vmPlatform.html" field="vmPlatform">
+        <f:textbox></f:textbox>
     </f:entry>
-    <f:entry title="${%Virtual Machine Group}" help="/plugin/scripted-cloud-plugin/slave-vmGroup.html">
-        <f:textbox field="vmGroup"></f:textbox>
+    <f:entry title="${%Virtual Machine Group}" help="/plugin/scripted-cloud-plugin/slave-vmGroup.html"  field="vmGroup">
+        <f:textbox></f:textbox>
     </f:entry>
-    <f:entry title="${%Snapshot Name}" help="/plugin/scripted-cloud-plugin/slave-snapName.html">
-        <f:textbox field="snapName"></f:textbox> 
+    <f:entry title="${%Snapshot Name}" help="/plugin/scripted-cloud-plugin/slave-snapName.html" field="snapName">
+        <f:textbox></f:textbox> 
     </f:entry>
 
-    <f:entry title="${%Extra Params}" help="/plugin/scripted-cloud-plugin/slave-vmExtraParams.html">
-        <f:textbox field="vmExtraParams"></f:textbox>
+    <f:entry title="${%Extra Params}" help="/plugin/scripted-cloud-plugin/slave-vmExtraParams.html" field="vmExtraParams">
+        <f:textbox></f:textbox>
     </f:entry>
 
     <f:entry title="${%Remote FS root}" field="remoteFS">
@@ -45,14 +45,14 @@
     <f:slave-mode name="mode" node="${it}"/>
 
     <f:entry title="${%Force Launch}" description="${%Start VM if its not running already.}" 
-help="/plugin/scripted-cloud-plugin/slave-forceLaunch.html">
-        <f:checkbox field="forceLaunch"/>
+help="/plugin/scripted-cloud-plugin/slave-forceLaunch.html"  field="forceLaunch">
+        <f:checkbox/>
     </f:entry>
     
     <!--
     <f:entry title="${%Disconnect After Limited Builds}" help="/plugin/vsphere-cloud/slave-LimitedTestRunCount.html" 
-description="${%Number of builds to allow before disconnecting the agent; use 0 for NEVER.}">
-       <f:textbox default="0" field="LimitedTestRunCount"/>
+description="${%Number of builds to allow before disconnecting the agent; use 0 for NEVER.}"  field="LimitedTestRunCount">
+       <f:textbox default="0"/>
     </f:entry>
     -->
     

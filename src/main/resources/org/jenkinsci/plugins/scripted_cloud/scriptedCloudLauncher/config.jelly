@@ -24,7 +24,7 @@
     </j:if>
 
 <l:isAdmin>
-                    <form method="get" action="disconnect">
+                    <form method="get" action="doDisconnect">
                         <f:submit value="${%Stop Slave VM}" />
                     </form>
          </l:isAdmin>

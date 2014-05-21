@@ -170,9 +170,10 @@ public class scriptedCloudLauncher extends ComputerLauncher {
 	                else {
 			scriptedCloud.Log(s, listener,"delegate launch not supported");                        
 		                for (int i = 0; i <= secToWaitOnline; i++) {
-		                    Thread.sleep(1000);
+		                    Thread.sleep(3000);
 			    scriptedCloud.Log(s, listener,"Awaiting the slave to come online");  
-		                    if (s.isOnline()) {
+			    if (s != null)
+		                     if (s.isOnline()) {
 		                        break;
 	                	    }
 	                }
