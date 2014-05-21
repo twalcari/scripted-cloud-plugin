@@ -56,14 +56,14 @@ import org.kohsuke.stapler.QueryParameter;
  */
 public class scriptedCloudSlave extends Slave {
 
-    public  String vsDescription;
-    public  String vmName;
-    public  String snapName;
-    public  String vmPlatform;
-    public  String vmExtraParams;
-    public  String vmGroup;
-    public  String idleOption;
-    public  Boolean forceLaunch;    
+    public  final String vsDescription;
+    public  final String vmName;
+    public  final String snapName;
+    public  final String vmPlatform;
+    public  final String vmExtraParams;
+    public  final String vmGroup;
+    public  final String idleOption;
+    public  final Boolean forceLaunch;    
     
     private Integer LimitedTestRunCount = 0; // If limited test runs enabled, the number of tests to limit the slave too.
     private transient Integer NumberOfLimitedTestRuns = 0;
