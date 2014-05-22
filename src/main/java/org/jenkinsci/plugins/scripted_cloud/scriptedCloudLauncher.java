@@ -62,8 +62,7 @@ public class scriptedCloudLauncher extends ComputerLauncher {
 
 
     @DataBoundConstructor
-    public scriptedCloudLauncher(ComputerLauncher delegate,
-    		String vsdescr) {
+    public scriptedCloudLauncher(ComputerLauncher delegate) {
         super();
         this.delegate = delegate;
         //this.isStarting = Boolean.FALSE;

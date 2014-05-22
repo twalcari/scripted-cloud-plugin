@@ -54,16 +54,16 @@ import org.kohsuke.stapler.QueryParameter;
  *
  * @author Admin
  */
-public class scriptedCloudSlave extends Slave {
+public final class scriptedCloudSlave extends Slave {
 
-    public  final String vsDescription;
-    public  final String vmName;
-    public  final String snapName;
-    public  final String vmPlatform;
-    public  final String vmExtraParams;
-    public  final String vmGroup;
-    public  final String idleOption;
-    public  final Boolean forceLaunch;    
+    private  String vsDescription;
+    private  String vmName;
+    private  String snapName;
+    private  String vmPlatform;
+    private  String vmExtraParams;
+    private  String vmGroup;
+    private  String idleOption;
+    private  Boolean forceLaunch;    
     
     private Integer LimitedTestRunCount = 0; // If limited test runs enabled, the number of tests to limit the slave too.
     private transient Integer NumberOfLimitedTestRuns = 0;
@@ -85,7 +85,7 @@ public class scriptedCloudSlave extends Slave {
             throws FormException, IOException {
         super(name, nodeDescription, remoteFS, numExecutors, mode, labelString,
         		
-                new scriptedCloudLauncher(delegateLauncher , vsDescription)
+                new scriptedCloudLauncher(delegateLauncher)
         
         		,retentionStrategy, nodeProperties);
         this.vsDescription = vsDescription;
