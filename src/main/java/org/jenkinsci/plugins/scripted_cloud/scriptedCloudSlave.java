@@ -49,6 +49,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
+import net.sf.json.JSONObject;
+import org.kohsuke.stapler.StaplerRequest;
+
 
 /**
  *
@@ -166,6 +169,12 @@ public final class scriptedCloudSlave extends Slave {
     	scriptedCloud.Log("createComputer " + name + "\n");
         return new scriptedCloudSlaveComputer(this);
     }
+
+   @Override
+    public DescriptorImpl getDescriptor() {
+        return (DescriptorImpl) super.getDescriptor();
+    }
+
         
     public boolean StartLimitedTestRun(Run r, TaskListener listener) {
     	scriptedCloud.Log("StartLimitedTestRun"); 
@@ -218,9 +227,75 @@ public final class scriptedCloudSlave extends Slave {
     @Extension
     public static final class DescriptorImpl extends SlaveDescriptor {
 
+    private  String vmName;
+    private  String snapName;
+    private  String vmPlatform;
+    private  String vmExtraParams;
+    private  String vmGroup;
+    private  String idleOption;
+    private  Boolean forceLaunch;    
+    private  String vsDescription;
+
         public DescriptorImpl() {
             load();
         }
+
+public String getVmName() {
+        return vmName;
+    }
+    public void setVmName(String name) {
+        vmName = name;
+    }
+
+    public String getVmPlatform() {
+        return vmPlatform;
+    }
+    public void setVmPlatform(String name) {
+    	vmPlatform = name;
+    }
+
+    public String getVmExtraParams() {
+        return vmExtraParams;
+    }
+    public void setVmExtraParams(String name) {
+    	vmExtraParams = name;
+    }
+
+    public String getVmGroup() {
+        return vmGroup;
+    }
+    public void setVmGroup(String name) {
+    	vmGroup = name;
+    }
+
+    public String getSnapName() {
+        return snapName;
+    }
+    public void setSnapName(String name) {
+    	snapName = name;
+    }
+
+
+    public String getIdleOption() {
+        return idleOption;
+    }
+    public void setIdleOption(String name) {
+    	idleOption = name;
+    }
+    
+    public Boolean getForceLaunch() {
+        return forceLaunch;
+    }
+    public void setForceLaunch(Boolean name) {
+    	forceLaunch = name;
+    }
+
+    public String getVsDescription() {
+        return vsDescription;
+    }
+    public void setVsDescription(String name) {
+    	vsDescription = name;
+    }
 
         public String getDisplayName() {
             return "Slave virtual computer running under scripted Cloud";
@@ -230,6 +305,22 @@ public final class scriptedCloudSlave extends Slave {
         public boolean isInstantiable() {
             return true;
         }
+
+   @Override
+        public boolean configure(StaplerRequest req, JSONObject o)
+                throws FormException {
+            vsDescription = o.getString("vsDescription");
+	vmName = o.getString("vmName");
+	   snapName = o.getString("snapName") ;
+	  vmPlatform = o.getString("vmPlatform");
+	   vmExtraParams = o.getString("vmExtraParams");
+	  vmGroup = o.getString("vmGroup");
+	   idleOption = o.getString("idleOption");
+  	 forceLaunch = o.getBoolean("forceLaunch");    
+            save();
+            return super.configure(req, o);
+        }
+
 
         public List<scriptedCloud> getscriptedClouds() {
             List<scriptedCloud> result = new ArrayList<scriptedCloud>();
