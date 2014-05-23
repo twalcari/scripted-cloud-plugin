@@ -81,7 +81,8 @@ public class scriptedCloudLauncher extends ComputerLauncher {
         }
         scriptedCloud.Log("Could not find our scripted Cloud instance!");
         throw new RuntimeException("Could not find our scripted Cloud instance!");
-    }    
+    }   
+
 
     public void enableLaunch() {
     	enableLaunch = Boolean.TRUE;
@@ -118,6 +119,34 @@ public class scriptedCloudLauncher extends ComputerLauncher {
         */
     }
 
+ public static void fillEnv(HashMap envMap, scriptedCloudSlave cloudSlave) {
+		envMap.put("SCVM_NAME", cloudSlave.getVmName());
+		envMap.put("SCVM_SNAPNAME", cloudSlave.getSnapName());
+		envMap.put("SCVM_PLATFORM", cloudSlave.getVmPlatform());
+		envMap.put("SCVM_EXTRAPARAMS", cloudSlave.getVmExtraParams());    		
+		envMap.put("SCVM_GROUP", cloudSlave.getVmGroup());
+
+		String idleOption = cloudSlave.getIdleOption();
+		
+		if ("Shutdown".equals(idleOption)) {
+		            envMap.put("SCVM_STOPACTION", "shutdown");
+		        } else if ("Shutdown and Revert".equals(idleOption)) {
+		            envMap.put("SCVM_STOPACTION", "revert");
+		        } else if ("Reset".equals(idleOption)) {
+		            envMap.put("SCVM_STOPACTION", "reset");            
+		        } else {
+		           envMap.put("SCVM_STOPACTION", "nothing");
+		        }
+		
+		if (cloudSlave.getForceLaunch() == Boolean.TRUE) {
+			envMap.put("SCVM_FORCESTART", "yes");
+		}
+		else {
+			envMap.put("SCVM_FORCESTART", "no");
+		}
+    }
+
+
    public void run(scriptedCloudSlaveComputer s , TaskListener listener)  
    throws IOException, InterruptedException  {
          s.setStarting();
@@ -130,7 +159,7 @@ public class scriptedCloudLauncher extends ComputerLauncher {
     		FilePath script = shell.createScriptFile(root);
     		int r = 0;
     		HashMap envMap = new HashMap();    		
-    		s.fillEnv(envMap);
+    		fillEnv(envMap , (scriptedCloudSlave)s.getNode() );
     		envMap.put("SCVM_ACTION","start");
     		scriptedCloud.Log(s, listener, "start env:" + envMap);
     		shell.buildCommandLine(script);
@@ -169,7 +198,7 @@ public class scriptedCloudLauncher extends ComputerLauncher {
 	                else {
 			scriptedCloud.Log(s, listener,"delegate launch not supported");                        
 		                for (int i = 0; i <= secToWaitOnline; i++) {
-		                    Thread.sleep(3000);
+		                    Thread.sleep(1000);
 			    scriptedCloud.Log(s, listener,"Awaiting the slave to come online");  
 			    if (s != null)
 		                     if (s.isOnline()) {
@@ -190,6 +219,7 @@ public class scriptedCloudLauncher extends ComputerLauncher {
     		s.revertState();
     		scriptedCloud.Log(slaveComputer, listener, "!!! Exception !!!");
     		scriptedCloud.Log(slaveComputer, listener, "launch error:"+ e);
+		e.printStackTrace( listener.getLogger() );
     		throw new RuntimeException(e);
     	}
     	
@@ -222,7 +252,7 @@ public class scriptedCloudLauncher extends ComputerLauncher {
         	delegate.afterDisconnect(slaveComputer, taskListener);        	
         	scriptedCloud vs = findOurVsInstance(slaveComputer.getVsDescription());
             HashMap envMap = new HashMap();
-            slaveComputer.fillEnv(envMap);
+            fillEnv(envMap , (scriptedCloudSlave)slaveComputer.getNode());
 	    	envMap.put("SCVM_ACTION","stop");
     		scriptedCloud.Log(slaveComputer, taskListener, "Calling stop script with env:" + envMap);
         	String scriptToRun = vs.getStopScriptFile();

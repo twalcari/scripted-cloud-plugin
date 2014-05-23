@@ -164,10 +164,11 @@ public final class scriptedCloudSlave extends Slave {
     	forceLaunch = name;
     }
 
+
     @Override
     public Computer createComputer() {
     	scriptedCloud.Log("createComputer " + name + "\n");
-        return new scriptedCloudSlaveComputer(this);
+        return new scriptedCloudSlaveComputer( this , this.getIdleOption() );
     }
 
    @Override

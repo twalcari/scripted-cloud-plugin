@@ -60,71 +60,36 @@ public class scriptedCloudSlaveComputer extends SlaveComputer {
     
     private MACHINE_ACTION idleAction;
 
-    private scriptedCloudSlave cloudSlave; 
     
     private boolean needed;
     
-    public scriptedCloudSlaveComputer(scriptedCloudSlave slave
-            ) {
-        super(slave);
-        cloudSlave = slave;
-        
+    public scriptedCloudSlaveComputer(Slave slave , String idleOption ) {
+	super(slave);
     	isStarting = Boolean.FALSE;
     	isDisconnecting = Boolean.FALSE;
     	state = SC_SLAVE_STATE.INITIAL;
     	prevState = state;
 
-        String idleOption = cloudSlave.getIdleOption();
-        if ("Shutdown".equals(idleOption)) {
+          if ("Shutdown".equals(idleOption)) {
             idleAction = MACHINE_ACTION.SHUTDOWN;
         } else if ("Shutdown and Revert".equals(idleOption)) {
             idleAction = MACHINE_ACTION.REVERT;
         } else if ("Reset".equals(idleOption)) {
-            idleAction = MACHINE_ACTION.RESET;            
+            idleAction = MACHINE_ACTION.RESET;
         } else {
             idleAction = MACHINE_ACTION.NOTHING;
         }
-        
         needed = false;
     }
-    
-    public void fillEnv(HashMap envMap) {
-		envMap.put("SCVM_NAME", this.cloudSlave.getVmName());
-		envMap.put("SCVM_SNAPNAME", this.cloudSlave.getSnapName());
-		envMap.put("SCVM_PLATFORM", this.cloudSlave.getVmPlatform());
-		envMap.put("SCVM_EXTRAPARAMS", this.cloudSlave.getVmExtraParams());    		
-		envMap.put("SCVM_GROUP", this.cloudSlave.getVmGroup());
-		switch(idleAction) {
-		case SHUTDOWN:
-			envMap.put("SCVM_STOPACTION", "shutdown");
-			break;
-		case REVERT:
-			envMap.put("SCVM_STOPACTION", "revert");
-			break;
-		case RESET:
-			envMap.put("SCVM_STOPACTION", "reset");
-			break;
-		case NOTHING:
-			envMap.put("SCVM_STOPACTION", "nothing");
-			break;
-		}		
-		if (cloudSlave.getForceLaunch() == Boolean.TRUE) {
-			envMap.put("SCVM_FORCESTART", "yes");
-		}
-		else {
-			envMap.put("SCVM_FORCESTART", "no");
-		}
-    }
-    
+        
     @Override
     protected Future<?> _connect(boolean forceReconnect) {
         return super._connect(forceReconnect);
     }    
     
     public String toString() {
-    	return String.format("%s[state:%s, idleaction:%s] "
-    			,this.cloudSlave.getVmName() , getState()
-    		    ,cloudSlave.getIdleOption());
+    	return String.format("%s[state:%s] "
+    			,this.getVmName() , getState()    ); 
     }
     
     //============= set/get functions
@@ -182,10 +147,12 @@ public class scriptedCloudSlaveComputer extends SlaveComputer {
     
     //member get/set
     public String getVmName() {
+        scriptedCloudSlave cloudSlave = (scriptedCloudSlave) this.getNode();
         return cloudSlave.getVmName();
     }
 
     public String getVsDescription() {
+        scriptedCloudSlave cloudSlave = (scriptedCloudSlave) this.getNode();
         return cloudSlave.getVsDescription();
     }
     
