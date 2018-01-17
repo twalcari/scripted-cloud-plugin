@@ -1,0 +1,16 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" 
+	xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    
+    <f:entry title="${%Name to use for this scripted Cloud}" field="name">
+        <f:textbox  />
+    </f:entry>
+    
+    <f:entry title="${%Batch or a shell script to start machine}" field="startScript">
+        <f:expandableTextbox />
+    </f:entry>
+    
+    <f:entry title="${%Batch or a shell script to stop machine}" field="stopScript">
+        <f:expandableTextbox />
+    </f:entry>
+    
+</j:jelly>

@@ -1,12 +1,12 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form">
              
-    <f:entry title="${%scripted Cloud Instance}" help="/plugin/scripted-cloud-plugin/slave-vsDescription.html">
-        <select class="setting-input" name="vsDescription" value="${it.vsDescription}" field="vsDescription">
+    <f:entry title="${%scripted Cloud Instance}" >
+        <select class="setting-input" name="cloudName" value="${it.cloudName}" field="cloudName">
             <option>Select a scripted Cloud instance...</option>
-            <j:forEach var="d" items="${descriptor.getscriptedClouds()}" varStatus="loop">
-                <option selected="${d.vsDescription==it.vsDescription?'true':null}" value="${d.vsDescription}">
-                    ${d.vsDescription}
+            <j:forEach var="d" items="${descriptor.getScriptedClouds()}" varStatus="loop">
+                <option selected="${d.name==it.cloudName?'true':null}" value="${d.name}">
+                    ${d.name}
                 </option>
             </j:forEach>
         </select>
@@ -16,22 +16,11 @@
         <f:textbox/>
     </f:entry>
 
-    <f:entry title="${%Virtual Machine Name}" help="/plugin/scripted-cloud-plugin/slave-vmName.html" field="vmName">
-        <f:textbox></f:textbox>
-    </f:entry>
-    <f:entry title="${%Virtual Machine Platform}" help="/plugin/scripted-cloud-plugin/slave-vmPlatform.html" field="vmPlatform">
-        <f:textbox></f:textbox>
-    </f:entry>
-    <f:entry title="${%Virtual Machine Group}" help="/plugin/scripted-cloud-plugin/slave-vmGroup.html"  field="vmGroup">
-        <f:textbox></f:textbox>
-    </f:entry>
-    <f:entry title="${%Snapshot Name}" help="/plugin/scripted-cloud-plugin/slave-snapName.html" field="snapName">
-        <f:textbox></f:textbox> 
+    <f:entry title="${%EnvVars}" description="${%List of environment variables to give to start/stop script}">
+      <f:repeatableHeteroProperty field="envVars" hasHeader="true" addCaption="Add Environment Variable"
+                                  deleteCaption="Delete Environment Variable" />
     </f:entry>
 
-    <f:entry title="${%Extra Params}" help="/plugin/scripted-cloud-plugin/slave-vmExtraParams.html" field="vmExtraParams">
-        <f:textbox></f:textbox>
-    </f:entry>
 
     <f:entry title="${%Remote FS root}" field="remoteFS">
         <f:textbox/>
@@ -44,13 +33,12 @@
 
     <f:slave-mode name="mode" node="${it}"/>
 
-    <f:entry title="${%Force Launch}" description="${%Start VM if its not running already.}" 
-help="/plugin/scripted-cloud-plugin/slave-forceLaunch.html"  field="forceLaunch">
+    <f:entry title="${%Force Launch}" description="${%Start VM if its not running already.}"  field="forceLaunch">
         <f:checkbox/>
     </f:entry>
     
     <!--
-    <f:entry title="${%Disconnect After Limited Builds}" help="/plugin/vsphere-cloud/slave-LimitedTestRunCount.html" 
+    <f:entry title="${%Disconnect After Limited Builds}"
 description="${%Number of builds to allow before disconnecting the agent; use 0 for NEVER.}"  field="LimitedTestRunCount">
        <f:textbox default="0"/>
     </f:entry>
@@ -100,14 +88,14 @@ description="${%Number of builds to allow before disconnecting the agent; use 0 
         </f:dropdownList>
     </j:if>
 
-    <f:entry title="${%What to do when the slave is disconnected}" field="idleOption" name="idleOption" 
+   <!-- <f:entry title="${%What to do when the slave is disconnected}" field="idleOption" name="idleOption"
 help="/plugin/scripted-cloud-plugin/slave-idleOption.html">
         <select class="setting-input" name="idleOption">
             <j:forEach var="t" items="${descriptor.getIdleOptions()}" varStatus="loop">
                 <f:option value="${t}" selected="${t==instance.idleOption}">${t}</f:option>
             </j:forEach>
         </select>
-    </f:entry>
+    </f:entry> -->
 
     <f:descriptorList title="${%Node Properties}" descriptors="${h.getNodePropertyDescriptors(descriptor.clazz)}"
                       field="nodeProperties"/>
