@@ -1,3 +1,4 @@
+<?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form">
              
@@ -21,6 +22,10 @@
                                   deleteCaption="Delete Environment Variable" />
     </f:entry>
 
+    <f:entry title="${%Wait time}" description="${%Number of seconds to wait for a slave to become online}" field="secToWaitOnline">
+        <f:textbox default="600"/>
+    </f:entry>
+
 
     <f:entry title="${%Remote FS root}" field="remoteFS">
         <f:textbox/>
@@ -33,20 +38,15 @@
 
     <f:slave-mode name="mode" node="${it}"/>
 
-    <f:entry title="${%Force Launch}" description="${%Start VM if its not running already.}"  field="forceLaunch">
+    <f:entry title="${%Reusable}"
+description="${%Can this slave be used for multiple builds?}"  field="reusable">
         <f:checkbox/>
     </f:entry>
-    
-    <!--
-    <f:entry title="${%Disconnect After Limited Builds}"
-description="${%Number of builds to allow before disconnecting the agent; use 0 for NEVER.}"  field="LimitedTestRunCount">
-       <f:textbox default="0"/>
-    </f:entry>
-    -->
+
     
     <f:dropdownList name="slave.delegateLauncher" title="${%Slave launch method}"
                     help="${descriptor.getHelpFile('launcher')}">
-        <j:forEach var="d" items="${descriptor.getComputerLauncherDescriptors()}" varStatus="loop">
+        <j:forEach var="d" items="${descriptor.computerLauncherDescriptors()}" varStatus="loop">
             <f:dropdownListBlock value="${d.clazz.name}" name="${d.displayName}"
                                  selected="${it.delegateLauncher.descriptor==d}"
                                  title="${d.displayName}">

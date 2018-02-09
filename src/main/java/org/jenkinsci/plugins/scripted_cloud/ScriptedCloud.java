@@ -4,38 +4,30 @@
  */
 package org.jenkinsci.plugins.scripted_cloud;
 
-import com.cloudbees.hudson.plugins.folder.AbstractFolderProperty;
-import com.cloudbees.hudson.plugins.folder.AbstractFolderPropertyDescriptor;
-import com.cloudbees.hudson.plugins.folder.Folder;
-import hudson.AbortException;
-import hudson.Extension;
-import hudson.FilePath;
-import hudson.Functions;
+import hudson.*;
 import hudson.model.*;
-import hudson.slaves.AbstractCloudImpl;
-import hudson.slaves.Cloud;
-import hudson.slaves.NodeProvisioner.PlannedNode;
-import hudson.slaves.SlaveComputer;
+import hudson.slaves.*;
 import hudson.tasks.BatchFile;
 import hudson.tasks.CommandInterpreter;
 import hudson.tasks.Shell;
-import hudson.util.DescribableList;
 import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
-import net.sf.json.JSONObject;
-import org.jenkinsci.plugins.scripted_cloud.folder.FolderScriptedCloudProperty;
 import org.jenkinsci.plugins.scripted_cloud.model.EnvironmentVariable;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Predicate;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 
 /**
@@ -43,118 +35,22 @@ import java.util.logging.Level;
  */
 public class ScriptedCloud extends AbstractCloudImpl {
 
-    private final String scHost;
+    private static final Logger LOGGER = Logger.getLogger(ScriptedCloud.class.getName());
+    private static final ExecutorService executorService = Executors.newCachedThreadPool();
+
     private String startScript;
     private String stopScript;
-
-    private static java.util.logging.Logger VSLOG = java.util.logging.Logger.getLogger("scripted-cloud");
-
-    private static void InternalLog(Slave slave, SlaveComputer slaveComputer, TaskListener listener, Throwable ex, Level logLevel, String format, Object... args) {
-        if (!VSLOG.isLoggable(logLevel) && listener == null)
-            return;
-        String s = "";
-        if (slave != null)
-            s = String.format("[%s] ", slave.getNodeName());
-        if (slaveComputer != null)
-            s = String.format("[%s] ", slaveComputer.getName());
-        s = s + String.format(format, args);
-        if (listener != null) {
-            listener.getLogger().print(s + "\n");
-            if (ex != null) {
-                listener.getLogger().print(ex.toString() + "\n");
-                ex.printStackTrace(listener.getLogger());
-            }
-        }
-        if (ex != null) {
-            VSLOG.log(logLevel, s, ex);
-        } else {
-            VSLOG.log(logLevel, s);
-        }
-    }
-
-    /**
-     * Logs an {@link Level#INFO} message (created with {@link String#format(String, Object...)}).
-     */
-    public static void Log(String format, Object... args) {
-        InternalLog(null, null, null, null, Level.INFO, format, args);
-    }
-
-    /**
-     * Logs an {@link Level#SEVERE} message (created with {@link String#format(String, Object...)}) and a {@link Throwable} with stacktrace.
-     */
-    public static void Log(Throwable ex, String format, Object... args) {
-        InternalLog(null, null, null, ex, Level.SEVERE, format, args);
-    }
-
-    /**
-     * Logs a {@link Level#INFO} message (created with {@link String#format(String, Object...)}).
-     */
-    public static void Log(TaskListener listener, String format, Object... args) {
-        InternalLog(null, null, listener, null, Level.INFO, format, args);
-    }
-
-    /**
-     * Logs a {@link Level#SEVERE} message (created with {@link String#format(String, Object...)}) and a {@link Throwable} (with stacktrace).
-     */
-    public static void Log(TaskListener listener, Throwable ex, String format, Object... args) {
-        InternalLog(null, null, listener, ex, Level.SEVERE, format, args);
-    }
-
-    /**
-     * Logs a {@link Level#INFO} message (created with {@link String#format(String, Object...)}), prefixed by the {@link Slave} name.
-     */
-    public static void Log(Slave slave, String format, Object... args) {
-        InternalLog(slave, null, null, null, Level.INFO, format, args);
-    }
-
-    /**
-     * Logs a {@link Level#SEVERE} message (created with {@link String#format(String, Object...)}) and a {@link Throwable} (with stacktrace), prefixed by the {@link Slave} name.
-     */
-    public static void Log(Slave slave, Throwable ex, String format, Object... args) {
-        InternalLog(slave, null, null, ex, Level.SEVERE, format, args);
-    }
-
-    /**
-     * Logs a {@link Level#INFO} message (created with {@link String#format(String, Object...)}), prefixed by the {@link Slave} name.
-     */
-    public static void Log(Slave slave, TaskListener listener, String format, Object... args) {
-        InternalLog(slave, null, listener, null, Level.INFO, format, args);
-    }
-
-    /**
-     * Logs a {@link Level#SEVERE} message (created with {@link String#format(String, Object...)}) and a {@link Throwable} (with stacktrace), prefixed by the {@link Slave} name.
-     */
-    public static void Log(Slave slave, TaskListener listener, Throwable ex, String format, Object... args) {
-        InternalLog(slave, null, listener, ex, Level.SEVERE, format, args);
-    }
-
-    /**
-     * Logs a {@link Level#INFO} message (created with {@link String#format(String, Object...)}), prefixed by the {@link SlaveComputer} name.
-     */
-    public static void Log(SlaveComputer slave, TaskListener listener, String format, Object... args) {
-        InternalLog(null, slave, listener, null, Level.INFO, format, args);
-    }
-
-    /**
-     * Logs a {@link Level#SEVERE} message (created with {@link String#format(String, Object...)}) and a {@link Throwable} (with stacktrace), prefixed by the {@link SlaveComputer} name.
-     */
-    public static void Log(SlaveComputer slave, TaskListener listener, Throwable ex, String format, Object... args) {
-        InternalLog(null, slave, listener, ex, Level.SEVERE, format, args);
-    }
+    private final List<ScriptedCloudSlaveTemplate> templates;
 
     @DataBoundConstructor
-    public ScriptedCloud(String name, String instanceCapStr, String scHost, String startScript, String stopScript) {
+    public ScriptedCloud(String name, String instanceCapStr, String startScript, String stopScript,
+                         List<ScriptedCloudSlaveTemplate> templates) {
         super(name, instanceCapStr);
-        Log("STARTTING SCRIPTED CLOUD");
-        this.scHost = scHost;
 
         this.startScript = startScript;
         this.stopScript = stopScript;
 
-    }
-
-    public String getScHost() {
-        return scHost;
+        this.templates = templates;
     }
 
     public String getStartScript() {
@@ -173,14 +69,166 @@ public class ScriptedCloud extends AbstractCloudImpl {
         this.stopScript = stopScript;
     }
 
-    @Override
-    public boolean canProvision(Label label) {
-        return false;
+    public List<ScriptedCloudSlaveTemplate> getTemplates() {
+        return templates;
     }
 
     @Override
-    public Collection<PlannedNode> provision(Label label, int excessWorkload) {
-        return Collections.emptySet();
+    public synchronized Collection<NodeProvisioner.PlannedNode> provision(Label label, int excessWorkload) {
+        try {
+            LOGGER.log(Level.INFO, String.format("Excess workload after pending instances for label '%s': %d", label, excessWorkload));
+
+            List<NodeProvisioner.PlannedNode> nodes = new ArrayList<>();
+            final List<ScriptedCloudSlaveTemplate> templates = getMatchingTemplates(label);
+
+            for (ScriptedCloudSlaveTemplate t : templates) {
+                LOGGER.log(Level.INFO, "Template: " + t.getDescription());
+
+                boolean canProvision = true;
+
+                while(canProvision && excessWorkload > 0){
+                    if (canProvisionSlaveTemplate(t, label)) {
+                        final String slaveName = t.createSlaveName();
+                        nodes.add(new NodeProvisioner.PlannedNode(
+                                slaveName,
+                                executorService.submit(
+                                        new ProvisioningCallback(slaveName, t)
+                                ), t.getNumExecutorsInt()));
+
+                        excessWorkload -= t.getNumExecutorsInt();
+                    } else {
+                        canProvision = false;
+                    }
+                }
+
+
+                if (nodes.size() > 0) {
+                    // Already found a matching template
+                    return nodes;
+                }
+            }
+
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Unable to schedule new Jenkins slave on scripted cloud, message: " + e.getMessage());
+        }
+        return Collections.emptyList();
+    }
+
+    private boolean canProvisionSlaveTemplate(@Nonnull ScriptedCloudSlaveTemplate template, Label label) {
+
+        boolean globalInstancesCountOk = getInstanceCap() == 0 || getInstancesCount() < getInstanceCap();
+        boolean templateInstancesOk =  template.getInstanceCap() == 0 || getTemplateInstancesCount(template) < template.getInstanceCap();
+
+        return globalInstancesCountOk && templateInstancesOk;
+    }
+
+    private int getTemplateInstancesCount(@Nonnull ScriptedCloudSlaveTemplate template) {
+        Computer[] computers = Jenkins.getInstance().getComputers();
+
+        int count = 0;
+        for (Computer computer : computers){
+            Node node = computer.getNode();
+
+            if(node instanceof ScriptedCloudSlave){
+                if(getTemplateFromVm(node.getNodeName()) == template)
+                    count++;
+            }
+        }
+        return count;
+    }
+
+    private int getInstancesCount() {
+        Computer[] computers = Jenkins.getInstance().getComputers();
+
+        int count = 0;
+        for (Computer computer : computers){
+            Node node = computer.getNode();
+
+            if(node instanceof ScriptedCloudSlave){
+                if(((ScriptedCloudSlave) node).getScriptedCloud() == this)
+                    count++;
+            }
+        }
+        return count;
+    }
+
+    @Nullable
+    private ScriptedCloudSlaveTemplate getTemplateFromVm(@Nonnull String vmName){
+        for (ScriptedCloudSlaveTemplate template : templates) {
+            if(vmName.startsWith(template.getSlaveNamePrefix()))
+                return template;
+        }
+        return null;
+    }
+
+    private class ProvisioningCallback implements Callable<Node> {
+
+        private final String slaveName;
+        private final ScriptedCloudSlaveTemplate template;
+
+        private ProvisioningCallback(String slaveName, ScriptedCloudSlaveTemplate template) {
+            this.slaveName = slaveName;
+            this.template = template;
+        }
+
+        @Override
+        public Node call() throws Exception {
+
+            // Support for Jenkins security
+            String jnlpSecret = "";
+            if (Jenkins.getInstance().isUseSecurity()) {
+                jnlpSecret = jenkins.slaves.JnlpSlaveAgentProtocol.SLAVE_SECRET.mac(slaveName);
+            }
+
+            List<EnvironmentVariable> envVars = new ArrayList<>();
+            if (template.getEnvVars() != null)
+                envVars.addAll(template.getEnvVars());
+            envVars.add(new EnvironmentVariable("JNLP_SECRET", jnlpSecret));
+
+            final ScriptedCloudSlave slave =
+                    new ScriptedCloudSlave(slaveName, "Instance " + slaveName + " of template " + template.getDescription(),
+                            template.getRemoteFS(),
+                            template.getNumExecutors(),
+                            template.getMode(),
+                            template.getLabels(),
+                            new JNLPLauncher(),
+                            RetentionStrategy.NOOP,
+                            Collections.emptyList(),
+                            name,
+                            envVars,
+                            template.getSecToWaitOnline(),
+                            template.getReusable());
+
+            Jenkins.getInstance().addNode(slave);
+
+
+            LOGGER.log(Level.INFO, String.format("Asking ScriptedCloud %s to schedule new Jenkins slave %s", name, slaveName));
+
+            Computer computer = slave.toComputer();
+            assert computer != null;
+            computer.waitUntilOnline();
+
+            return slave;
+        }
+    }
+
+
+    // Find the correct template for job
+    @Nonnull
+    private List<ScriptedCloudSlaveTemplate> getMatchingTemplates(Label label) {
+        return templates.stream()
+                .filter((Predicate<ScriptedCloudSlaveTemplate>) template -> {
+                    if (label != null) {
+                        return label.matches(template.getLabelSet());
+                    } else {
+                        return template.getLabelSet().isEmpty();
+                    }
+                }).collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean canProvision(Label label) {
+        return !getMatchingTemplates(label).isEmpty();
     }
 
     @Override
@@ -193,112 +241,38 @@ public class ScriptedCloud extends AbstractCloudImpl {
     }
 
 
-    public synchronized Boolean canMarkVMOnline(String slaveName, String vmName) {
-        return Boolean.TRUE;
-    }
-
-    public synchronized Boolean markVMOnline(String slaveName, String vmName) {
-        return Boolean.TRUE;
-    }
-
-    public synchronized void markVMOffline(String slaveName, String vmName) {
-    }
-
     @Override
     public DescriptorImpl getDescriptor() {
         return (DescriptorImpl) super.getDescriptor();
     }
 
-    public static List<ScriptedCloud> findAllScriptedClouds(String jobName) {
-        List<ScriptedCloud> scriptedClouds = new ArrayList<ScriptedCloud>();
-
-        String[] path = new String[0];
-        Folder prevFolder = null;
-
-        if (Stapler.getCurrentRequest() != null) {
-            path = Stapler.getCurrentRequest().getRequestURI().split("/");
-        } else if (jobName != null) {
-            path = jobName.split("/");
-        }
-
-        for (String item : path) {
-
-            if (item.equals("job") || item.equals("jenkins"))
-                continue;
-
-            TopLevelItem topLevelItem = null;
-            if (prevFolder == null) {
-                topLevelItem = Jenkins.getActiveInstance().getItem(item);
-            } else {
-                Collection<TopLevelItem> items = prevFolder.getItems();
-                for (TopLevelItem levelItem : items) {
-                    if (levelItem.getName().endsWith(item)) {
-                        topLevelItem = levelItem;
-                    }
-                }
-            }
-            if (topLevelItem != null && topLevelItem instanceof Folder) {
-                extractClouds(scriptedClouds, (Folder) topLevelItem);
-            }
-        }
-
-        for (Cloud cloud : Jenkins.getInstance().clouds) {
-            if (cloud instanceof ScriptedCloud) {
-                scriptedClouds.add((ScriptedCloud) cloud);
-            }
-        }
-        return scriptedClouds;
-    }
-
-    private static void extractClouds(List<ScriptedCloud> vSphereClouds, Folder folder) {
-        DescribableList<AbstractFolderProperty<?>, AbstractFolderPropertyDescriptor> properties = folder.getProperties();
-        for (AbstractFolderProperty<?> property : properties) {
-            if (property instanceof FolderScriptedCloudProperty) {
-                vSphereClouds.addAll(((FolderScriptedCloudProperty) property).getScriptedClouds());
-            }
-        }
-    }
 
     @Extension
     public static final class DescriptorImpl extends Descriptor<Cloud> {
-
-        public final ConcurrentMap<String, ScriptedCloud> hypervisors = new ConcurrentHashMap<String, ScriptedCloud>();
-        private String scHost;
 
         @Override
         public String getDisplayName() {
             return "scripted Cloud";
         }
 
-        @Override
-        public boolean configure(StaplerRequest req, JSONObject o)
-                throws FormException {
-            scHost = o.getString("scHost");
-            save();
-            return super.configure(req, o);
+        public FormValidation doCheckName(@QueryParameter String name) {
+            return FormValidation.validateRequired(name);
         }
 
-        /**
-         * For UI.
-         */
-        public FormValidation doTestConnection(
-                @QueryParameter String name) {
-            try {
+        public FormValidation doCheckStartScript(@QueryParameter String startScript) {
+            return FormValidation.validateRequired(startScript);
+        }
 
-                return FormValidation.ok("Connected successfully");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+        public FormValidation doCheckStopScript(@QueryParameter String stopScript) {
+            return FormValidation.validateRequired(stopScript);
         }
     }
 
 
     private CommandInterpreter getCommandInterpreter(String script) {
         if (Functions.isWindows()) {
-            ScriptedCloud.Log("its windows..");
             return new BatchFile(script);
         } else {
-            ScriptedCloud.Log("its unix..");
             return new Shell(script);
         }
     }
@@ -320,6 +294,7 @@ public class ScriptedCloud extends AbstractCloudImpl {
         environmentVariables.forEach(ev -> envVars.put(ev.getKey(), ev.getValue()));
 
         envVars.put("SLAVE_NAME", name);
+        envVars.put("JENKINS_URL", Jenkins.getInstance().getRootUrl());
 
 
         //launch the script
@@ -334,8 +309,8 @@ public class ScriptedCloud extends AbstractCloudImpl {
                 .stdout(taskListener)
                 .pwd(root).join();
 
-        if(result != 0){
-            throw new AbortException("The script failed with exit code "+ result);
+        if (result != 0) {
+            throw new AbortException("The script failed with exit code " + result);
         }
 
     }

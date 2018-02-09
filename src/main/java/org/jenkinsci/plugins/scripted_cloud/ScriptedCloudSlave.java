@@ -5,12 +5,11 @@
 package org.jenkinsci.plugins.scripted_cloud;
 
 import com.google.common.base.Throwables;
-import hudson.AbortException;
 import hudson.Extension;
-import hudson.Functions;
 import hudson.Util;
-import hudson.model.*;
+import hudson.model.Computer;
 import hudson.model.Descriptor.FormException;
+import hudson.model.TaskListener;
 import hudson.slaves.*;
 import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
@@ -25,7 +24,6 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,10 +40,8 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
     private String cloudName;
 
     private final List<EnvironmentVariable> envVars = new ArrayList<>();
-    private Boolean forceLaunch;
 
-    private Integer LimitedTestRunCount;
-    private transient Integer NumberOfLimitedTestRuns = 0;
+    private Boolean reusable;
 
 
     @DataBoundConstructor
@@ -54,43 +50,21 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
                               String labelString, ComputerLauncher delegateLauncher,
                               RetentionStrategy retentionStrategy,
                               List<? extends NodeProperty<?>> nodeProperties,
-                              String cloudName,
-                              String vmName, List<EnvironmentVariable> envVars,
-                              Boolean forceLaunch,
-                              String LimitedTestRunCount) throws FormException, IOException {
+                              String cloudName, List<EnvironmentVariable> envVars,
+                              String secToWaitOnline, Boolean reusable) throws FormException, IOException {
         super(name, nodeDescription, remoteFS, numExecutors, mode, labelString,
-                new ScriptedCloudLauncher(delegateLauncher, cloudName, vmName, LimitedTestRunCount)
+                new ScriptedCloudLauncher(delegateLauncher, Util.tryParseNumber(secToWaitOnline, 10 * 60).intValue())
                 , retentionStrategy, nodeProperties);
 
         this.cloudName = cloudName;
+        this.reusable = reusable;
         this.envVars.addAll(envVars);
-
-        this.forceLaunch = forceLaunch;
-        this.LimitedTestRunCount = Util.tryParseNumber(LimitedTestRunCount, 0).intValue();
-        this.NumberOfLimitedTestRuns = 0;
     }
 
 
     public List<EnvironmentVariable> getEnvVars() {
         return envVars;
     }
-
-    public void setLimitedTestRunCount(Integer limitedTestRunCount) {
-        LimitedTestRunCount = limitedTestRunCount;
-    }
-
-    public Integer getLimitedTestRunCount() {
-        return LimitedTestRunCount;
-    }
-
-    public Boolean getForceLaunch() {
-        return forceLaunch;
-    }
-
-    public void setForceLaunch(Boolean name) {
-        forceLaunch = name;
-    }
-
 
     static String getSlaveName() {
         String randString = RandomStringUtils.random(5, "bcdfghjklmnpqrstvwxz0123456789");
@@ -125,7 +99,7 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
 
     @Override
     public ScriptedCloudSlaveComputer createComputer() {
-        ScriptedCloud.Log("createComputer " + name + "\n");
+        LOGGER.log(Level.FINE, "createComputer " + name + "\n");
         return new ScriptedCloudSlaveComputer(this);
     }
 
@@ -137,7 +111,6 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
         if (computer == null) {
             String msg = String.format("Computer for slave is null: %s", name);
             LOGGER.log(Level.SEVERE, msg);
-            ScriptedCloud.Log(listener, msg);
             listener.fatalError(msg);
             return;
         }
@@ -184,77 +157,9 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
         return (DescriptorImpl) super.getDescriptor();
     }
 
-
-    static final private ConcurrentHashMap<Run, Computer> RunToSlaveMapper = new ConcurrentHashMap<Run, Computer>();
-
-    public boolean StartLimitedTestRun(Run r, TaskListener listener) {
-        ScriptedCloud.Log("StartLimitedTestRun");
-
-        boolean ret = false;
-        boolean DoUpdates = false;
-
-        if (LimitedTestRunCount > 0) {
-            DoUpdates = true;
-            if (NumberOfLimitedTestRuns < LimitedTestRunCount) {
-                ret = true;
-            }
-        } else {
-            ret = true;
-        }
-
-        Executor executor = r.getExecutor();
-        if (executor != null && DoUpdates) {
-            if (ret) {
-                NumberOfLimitedTestRuns++;
-                ScriptedCloud.Log(this, listener, "Starting limited count build: %d of %d", NumberOfLimitedTestRuns, LimitedTestRunCount);
-                Computer slave = executor.getOwner();
-                RunToSlaveMapper.put(r, slave);
-            } else {
-                ScriptedCloud.Log(this, listener, "Terminating build due to limited build count: %d of %d", NumberOfLimitedTestRuns, LimitedTestRunCount);
-                executor.interrupt(Result.ABORTED);
-            }
-        }
-
-        return ret;
+    public Boolean getReusable() {
+        return reusable;
     }
-
-
-    public boolean EndLimitedTestRun(Run r) {
-        boolean ret = true;
-
-        // See if the run maps to an existing computer; remove if found.
-        Computer slave = RunToSlaveMapper.get(r);
-        if (slave != null) {
-            RunToSlaveMapper.remove(r);
-        }
-
-        if (LimitedTestRunCount > 0) {
-            if (NumberOfLimitedTestRuns >= LimitedTestRunCount) {
-                ret = false;
-                NumberOfLimitedTestRuns = 0;
-                try {
-                    if (slave != null) {
-                        ScriptedCloud.Log(this, "Disconnecting the slave agent on %s due to limited build threshold", slave.getName());
-
-                        slave.setTemporarilyOffline(true, new OfflineCause.ByCLI("vSphere Plugin marking the slave as offline due to reaching limited build threshold"));
-                        slave.waitUntilOffline();
-                        slave.disconnect(new OfflineCause.ByCLI("vSphere Plugin disconnecting the slave as offline due to reaching limited build threshold"));
-                        slave.setTemporarilyOffline(false, new OfflineCause.ByCLI("vSphere Plugin marking the slave as online after completing post-disconnect actions."));
-                    } else {
-                        ScriptedCloud.Log(this, "Attempting to shutdown slave due to limited build threshold, but cannot determine slave");
-                    }
-                } catch (NullPointerException ex) {
-                    ScriptedCloud.Log(this, ex, "NullPointerException thrown while retrieving the slave agent");
-                } catch (InterruptedException ex) {
-                    ScriptedCloud.Log(this, ex, "InterruptedException thrown while marking the slave as online or offline");
-                }
-            }
-        } else {
-            ret = true;
-        }
-        return ret;
-    }
-
 
     /**
      * For UI.
@@ -268,25 +173,6 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
     @Override
     public ScriptedCloudSlave asNode() {
         return this;
-    }
-
-    @Extension
-    public static class ScriptedCloudComputerListener extends ComputerListener {
-
-        @Override
-        public void preLaunch(Computer c, TaskListener taskListener) throws IOException, InterruptedException {
-            /* We may be called on any slave type so check that we should
-             * be in here. */
-            if (!(c.getNode() instanceof ScriptedCloudSlave)) {
-                return;
-            }
-            ScriptedCloudLauncher vsL = (ScriptedCloudLauncher) ((SlaveComputer) c).getLauncher();
-            ScriptedCloud cloud = ((ScriptedCloudSlave) c.getNode()).getScriptedCloud();
-
-            if (!cloud.markVMOnline(c.getDisplayName(), vsL.getVmName())) {
-                throw new AbortException("The scripted cloud will not allow this slave to start at this time.");
-            }
-        }
     }
 
     @Extension
@@ -355,7 +241,6 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
             return result;
         }
 
-
         public ScriptedCloud getSpecificScriptedCloud(String cloudName)
                 throws Exception {
             for (ScriptedCloud scriptedCloud : getScriptedClouds()) {
@@ -366,43 +251,9 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
             throw new Exception("The scripted Cloud doesn't exist");
         }
 
-        public List<Descriptor<ComputerLauncher>> getComputerLauncherDescriptors() {
-            List<Descriptor<ComputerLauncher>> result = new ArrayList<Descriptor<ComputerLauncher>>();
-            for (Descriptor<ComputerLauncher> launcher : Functions.getComputerLauncherDescriptors()) {
-                if (!ScriptedCloudLauncher.class.isAssignableFrom(launcher.clazz)) {
-                    result.add(launcher);
-                }
-            }
-            return result;
-        }
 
-        public List<String> getIdleOptions() {
-            List<String> options = new ArrayList<String>();
-            options.add("Shutdown");
-            options.add("Shutdown and Revert");
-            options.add("Revert and Restart");
-            options.add("Revert and Reset");
-            options.add("Reset");
-            options.add("Nothing");
-            return options;
-        }
-
-        public FormValidation doCheckLaunchDelay(@QueryParameter String value) {
+        public FormValidation doCheckSecToWaitOnline(@QueryParameter String value) {
             return FormValidation.validatePositiveInteger(value);
-        }
-
-        public FormValidation doTestConnection(@QueryParameter String cloudName,
-                                               @QueryParameter String vmName,
-                                               @QueryParameter String snapName) {
-            try {
-                ScriptedCloud vsC = getSpecificScriptedCloud(cloudName);
-
-                //TODO: check if we can connect to the slave
-
-                return FormValidation.ok("Virtual Machine found successfully");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
         }
     }
 }
