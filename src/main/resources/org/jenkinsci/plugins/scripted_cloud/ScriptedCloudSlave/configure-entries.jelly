@@ -40,7 +40,7 @@
 
     <f:entry title="${%Reusable}"
 description="${%Can this slave be used for multiple builds?}"  field="reusable">
-        <f:checkbox/>
+        <f:checkbox default="true"/>
     </f:entry>
 
 

@@ -173,7 +173,7 @@ public class ScriptedCloud extends AbstractCloudImpl {
 
         @Override
         public Node call() throws Exception {
-            
+
             final ScriptedCloudSlave slave =
                     new ScriptedCloudSlave(slaveName, "Instance " + slaveName + " of template " + template.getDescription(),
                             template.getRemoteFS(),
