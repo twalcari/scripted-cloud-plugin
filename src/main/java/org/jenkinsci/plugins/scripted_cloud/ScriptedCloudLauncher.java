@@ -13,6 +13,7 @@ import hudson.slaves.SlaveComputer;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -73,7 +74,13 @@ public class ScriptedCloudLauncher extends DelegatingComputerLauncher {
             LOGGER.log(INFO, String.format("Requesting cloud start %s", computer.getDisplayName()));
 
             ScriptedCloud cloud = slave.getScriptedCloud();
-            cloud.startSlave(slave.getNodeName(), slave.getEnvVars(), listener);
+
+            long timeAtCloudSlaveStart = System.currentTimeMillis();
+
+            cloud.startSlave(slave.getNodeName(), slave.getEnvVars(), listener, slave.getSecToWaitOnlineInt(), TimeUnit.SECONDS);
+
+            long timeAtCloudSlaveStarted = System.currentTimeMillis();
+            final int secondsAlreadyWaitedForCloudStart = (int)((timeAtCloudSlaveStarted - timeAtCloudSlaveStart) /1000);
 
             LOGGER.log(INFO, String.format("Requested cloud %s to start %s", cloud.getDisplayName(), computer.getDisplayName()));
 
@@ -84,7 +91,7 @@ public class ScriptedCloudLauncher extends DelegatingComputerLauncher {
             } else {
                 LOGGER.log(INFO, String.format("Launcher %s cannot launch itself. Waiting for %s", getLauncher().getClass().getSimpleName(), computer.getDisplayName()));
 
-                for (int i = 0; i <= secToWaitOnline; i++) {
+                for (int i = 0; i <= (secToWaitOnline-secondsAlreadyWaitedForCloudStart); i++) {
                     //log every 10 seconds
                     if (i % 10 == 0)
                         LOGGER.log(INFO, String.format("Awaiting the slave %s to come online", slave.getNodeName()));

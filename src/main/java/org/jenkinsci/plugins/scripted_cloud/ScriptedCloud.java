@@ -4,10 +4,7 @@
  */
 package org.jenkinsci.plugins.scripted_cloud;
 
-import hudson.AbortException;
-import hudson.Extension;
-import hudson.FilePath;
-import hudson.Functions;
+import hudson.*;
 import hudson.model.*;
 import hudson.slaves.*;
 import hudson.tasks.BatchFile;
@@ -27,6 +24,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -280,17 +278,17 @@ public class ScriptedCloud extends AbstractCloudImpl {
     }
 
 
-    public void startSlave(String name, List<EnvironmentVariable> environmentVariables, TaskListener taskListener) throws IOException, InterruptedException {
-        executeCommand(startScript, name, environmentVariables, taskListener);
+    public void startSlave(String name, List<EnvironmentVariable> environmentVariables, TaskListener taskListener, long timeout, TimeUnit timeUnit) throws IOException, InterruptedException {
+        executeCommand(startScript, name, environmentVariables, taskListener, timeout, timeUnit);
 
     }
 
-    public void stopSlave(String name, List<EnvironmentVariable> environmentVariables, TaskListener taskListener) throws IOException, InterruptedException {
-        executeCommand(stopScript, name, environmentVariables, taskListener);
+    public void stopSlave(String name, List<EnvironmentVariable> environmentVariables, TaskListener taskListener, long timeout, TimeUnit timeUnit) throws IOException, InterruptedException {
+        executeCommand(stopScript, name, environmentVariables, taskListener, timeout,timeUnit);
     }
 
     private void executeCommand(String command, String name, List<EnvironmentVariable> environmentVariables,
-                                TaskListener taskListener) throws IOException, InterruptedException {
+                                TaskListener taskListener, long timeout, TimeUnit timeUnit) throws IOException, InterruptedException {
         //        //get all environment variables
         Map<String, String> envVars = new HashMap<>();
         environmentVariables.forEach(ev -> envVars.put(ev.getKey(), ev.getValue()));
@@ -305,12 +303,14 @@ public class ScriptedCloud extends AbstractCloudImpl {
         CommandInterpreter shell = getCommandInterpreter(command);
         FilePath script = shell.createScriptFile(root);
 
-        int result = root.createLauncher(taskListener).launch()
+        Proc proc =  root.createLauncher(taskListener).launch()
                 .cmds(shell.buildCommandLine(script))
                 .envs(envVars)
                 .stdout(taskListener)
                 .pwd(root)
-                .join();
+                .start();
+
+        int result = timeout != 0 ? proc.joinWithTimeout(timeout, timeUnit, taskListener): proc.join();
 
         if (result != 0) {
             throw new AbortException("The script failed with exit code " + result);

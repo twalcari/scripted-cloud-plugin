@@ -24,6 +24,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,6 +43,7 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
     private final List<EnvironmentVariable> envVars = new ArrayList<>();
 
     private Boolean reusable;
+    private String secToWaitOnline;
 
 
     @DataBoundConstructor
@@ -58,6 +60,7 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
 
         this.cloudName = cloudName;
         this.reusable = reusable;
+        this.secToWaitOnline = secToWaitOnline;
 
         if (envVars != null)
             this.envVars.addAll(envVars);
@@ -80,6 +83,14 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
 
     public Cloud getCloud() {
         return Jenkins.getInstance().getCloud(getCloudName());
+    }
+
+    public String getSecToWaitOnline() {
+        return secToWaitOnline;
+    }
+
+    public int getSecToWaitOnlineInt(){
+        return Util.tryParseNumber(secToWaitOnline, 10*60).intValue();
     }
 
     /**
@@ -141,7 +152,7 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
             }
             ScriptedCloud sc = ((ScriptedCloud) cloud);
 
-            sc.stopSlave(name, getEnvVars(), listener);
+            sc.stopSlave(name, getEnvVars(), listener, 600, TimeUnit.SECONDS);
             String msg = String.format("Terminated ScriptedCloud instance for slave %s", name);
             LOGGER.log(Level.INFO, msg);
             listener.getLogger().println(msg);
@@ -176,6 +187,8 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
     public ScriptedCloudSlave asNode() {
         return this;
     }
+
+
 
     @Extension
     public static final class DescriptorImpl extends SlaveDescriptor {
@@ -254,8 +267,8 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
         }
 
 
-        public FormValidation doCheckSecToWaitOnline(@QueryParameter String value) {
-            return FormValidation.validatePositiveInteger(value);
+        public FormValidation doCheckSecToWaitOnline(@QueryParameter String secToWaitOnline) {
+            return FormValidation.validatePositiveInteger(secToWaitOnline);
         }
     }
 }

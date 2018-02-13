@@ -22,7 +22,7 @@
                                   deleteCaption="Delete Environment Variable" />
     </f:entry>
 
-    <f:entry title="${%Wait time}" description="${%Number of seconds to wait for a slave to become online}" field="secToWaitOnline">
+    <f:entry title="${%Wait time}" description="${%Number of seconds to wait for a slave to become online}" field="secToWaitOnlineStr">
         <f:textbox default="600"/>
     </f:entry>
 
