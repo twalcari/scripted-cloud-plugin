@@ -4,7 +4,10 @@
  */
 package org.jenkinsci.plugins.scripted_cloud;
 
-import hudson.*;
+import hudson.AbortException;
+import hudson.Extension;
+import hudson.FilePath;
+import hudson.Functions;
 import hudson.model.*;
 import hudson.slaves.*;
 import hudson.tasks.BatchFile;
@@ -24,7 +27,6 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -217,7 +219,7 @@ public class ScriptedCloud extends AbstractCloudImpl {
     @Nonnull
     private List<ScriptedCloudSlaveTemplate> getMatchingTemplates(Label label) {
         return templates.stream()
-                .filter((Predicate<ScriptedCloudSlaveTemplate>) template -> {
+                .filter(template -> {
                     if (label != null) {
                         return label.matches(template.getLabelSet());
                     } else {
@@ -312,6 +314,8 @@ public class ScriptedCloud extends AbstractCloudImpl {
         if (result != 0) {
             throw new AbortException("The script failed with exit code " + result);
         }
+
+        LOGGER.log(Level.FINE, "Script for %s finished successfully.");
 
     }
 }

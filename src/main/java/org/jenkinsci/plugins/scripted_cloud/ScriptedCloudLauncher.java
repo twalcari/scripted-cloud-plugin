@@ -17,6 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.INFO;
+import static java.util.logging.Level.WARNING;
 
 /**
  * @author Admin
@@ -31,6 +32,7 @@ public class ScriptedCloudLauncher extends DelegatingComputerLauncher {
     public ScriptedCloudLauncher(ComputerLauncher delegate, int secToWaitOnline) {
         super(delegate);
         this.secToWaitOnline = secToWaitOnline;
+        LOGGER.log(Level.INFO, String.format("Created ScriptedCloudLauncher for %s", delegate.toString()));
     }
 
     @Override
@@ -42,6 +44,8 @@ public class ScriptedCloudLauncher extends DelegatingComputerLauncher {
     @Override
     public void launch(SlaveComputer slaveComputer, TaskListener listener) {
 
+        LOGGER.log(INFO, String.format("Launching %s", slaveComputer.getDisplayName()));
+
         if (!(slaveComputer instanceof ScriptedCloudSlaveComputer)) {
             throw new IllegalArgumentException("This launcher can only be used with SlaveComputer");
         }
@@ -49,28 +53,44 @@ public class ScriptedCloudLauncher extends DelegatingComputerLauncher {
         ScriptedCloudSlaveComputer computer = (ScriptedCloudSlaveComputer) slaveComputer;
         computer.setAcceptingTasks(false);
 
+        LOGGER.log(INFO, String.format("Disabled accepting tasks for now on %s", slaveComputer.getDisplayName()));
+
         ScriptedCloudSlave slave = computer.getNode();
 
         if (slave == null) {
+            LOGGER.log(WARNING, String.format("Node has been removed for %s, cannot launch", slaveComputer.getDisplayName()));
             throw new IllegalStateException("Node has been removed, cannot launch " + computer.getName());
         }
 
         if (launched) {
-            LOGGER.log(INFO, "Agent has already been launched, activating: {}", slave.getNodeName());
+            LOGGER.log(INFO, "Agent has already been launched, activating: %s", computer.getDisplayName());
             computer.setAcceptingTasks(true);
             return;
         }
 
         try {
+
+            LOGGER.log(INFO, String.format("Requesting cloud start %s", computer.getDisplayName()));
+
             ScriptedCloud cloud = slave.getScriptedCloud();
             cloud.startSlave(slave.getNodeName(), slave.getEnvVars(), listener);
 
+            LOGGER.log(INFO, String.format("Requested cloud %s to start %s", cloud.getDisplayName(), computer.getDisplayName()));
+
             if (getLauncher().isLaunchSupported()) {
+                LOGGER.log(INFO, String.format("Launcher %s can launch itself. Not doing anything anymore for %s", getLauncher().getClass().getSimpleName(), computer.getDisplayName()));
+
                 getLauncher().launch(slaveComputer, listener);
             } else {
+                LOGGER.log(INFO, String.format("Launcher %s cannot launch itself. Waiting for %s", getLauncher().getClass().getSimpleName(), computer.getDisplayName()));
+
                 for (int i = 0; i <= secToWaitOnline; i++) {
+                    //log every 10 seconds
+                    if (i % 10 == 0)
+                        LOGGER.log(INFO, String.format("Awaiting the slave %s to come online", slave.getNodeName()));
+
                     Thread.sleep(1000);
-                    LOGGER.log(INFO, String.format("Awaiting the slave %s to come online", slave.getNodeName()));
+
                     if (slave.getComputer() == null) {
                         throw new IllegalStateException("Node was deleted, computer is null");
                     }
@@ -83,7 +103,7 @@ public class ScriptedCloudLauncher extends DelegatingComputerLauncher {
                     throw new IllegalStateException("Slave did not come online in allowed time");
                 }
             }
-
+            LOGGER.log(INFO, "Agent has been launched, activating: %s", computer.getDisplayName());
 
             computer.setAcceptingTasks(true);
         } catch (Throwable ex) {
