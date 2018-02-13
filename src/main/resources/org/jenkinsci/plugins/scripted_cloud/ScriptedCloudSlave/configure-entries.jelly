@@ -43,10 +43,10 @@ description="${%Can this slave be used for multiple builds?}"  field="reusable">
         <f:checkbox/>
     </f:entry>
 
-    
+
     <f:dropdownList name="slave.delegateLauncher" title="${%Slave launch method}"
                     help="${descriptor.getHelpFile('launcher')}">
-        <j:forEach var="d" items="${descriptor.computerLauncherDescriptors()}" varStatus="loop">
+        <j:forEach var="d" items="${descriptor.getComputerLauncherDescriptors()}" varStatus="loop">
             <f:dropdownListBlock value="${d.clazz.name}" name="${d.displayName}"
                                  selected="${it.delegateLauncher.descriptor==d}"
                                  title="${d.displayName}">

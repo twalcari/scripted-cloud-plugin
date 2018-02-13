@@ -1,7 +1,13 @@
 <div>
-	<p>This script will be called while disconnecting a slave.
-		The environment variables defined in the node configuration will be passed to this script. By default the node
-		name is passed as the variable
-	<pre>SLAVE_NAME</pre>
+    <p>
+        This script will be called while disconnecting a slave.
+        The environment variables defined in the node configuration will be passed to this script.<br/>
+        By default the following arguments will always be passed:
+    <dl>
+        <dt>
+            <pre>SLAVE_NAME</pre>
+        </dt>
+        <dd>Slave hostname</dd>
+    </dl>
     </p>
 </div>

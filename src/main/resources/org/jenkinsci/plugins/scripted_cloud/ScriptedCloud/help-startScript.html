@@ -1,9 +1,22 @@
 <div>
     <p>This script will be called while launching a slave. <br/>
-        The environment variables defined in the node configuration will be passed to this script. By default the node
-        name is passed as the variable
-    <pre>SLAVE_NAME</pre>
-    . <br/>
+        The environment variables defined in the node configuration will be passed to this script.<br/>
+        By default the following arguments will always be passed:
+    <dl>
+        <dt>
+            <pre>SLAVE_NAME</pre>
+        </dt>
+        <dd>Slave hostname</dd>
+        <dt>
+            <pre>JENKINS_URL</pre>
+        </dt>
+        <dd>Base URL of the Jenkins instance</dd>
+        <dt>
+            <pre>JNLP_SECRET</pre>
+        </dt>
+        <dd>Hex secret to be passed to the slave instance</dd>
+    </dl>
+
     This script must ensure that VM is up and running before it ends.
     </p>
 </div>

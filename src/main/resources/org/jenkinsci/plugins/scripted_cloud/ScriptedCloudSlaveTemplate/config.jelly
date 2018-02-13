@@ -44,6 +44,10 @@
             <f:textbox default="1"/>
         </f:entry>
 
+        <f:entry title="${%Executors}" field="numPreprovisioned" description="${%Number of preprovisioned slaves for this template}">
+            <f:textbox default="1"/>
+        </f:entry>
+
 
         <f:slave-mode name="mode" node="${it}"/>
 
