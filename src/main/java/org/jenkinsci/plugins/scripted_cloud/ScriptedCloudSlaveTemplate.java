@@ -5,7 +5,6 @@ import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Label;
-import hudson.model.Node;
 import hudson.model.labels.LabelAtom;
 import hudson.util.FormValidation;
 import org.apache.commons.lang.RandomStringUtils;
@@ -31,15 +30,13 @@ public class ScriptedCloudSlaveTemplate extends AbstractDescribableImpl<Scripted
     private final String remoteFS;
     private final Set<LabelAtom> labelSet;
     private final String numExecutors;
-    private final Node.Mode mode;
 
     @DataBoundConstructor
     public ScriptedCloudSlaveTemplate(String slaveNamePrefix, String description, String instanceCapStr,
                                       List<EnvironmentVariable> envVars,
                                       String secToWaitOnline, Boolean reusable, String labels,
                                       String remoteFS,
-                                      String numExecutors,
-                                      Node.Mode mode) {
+                                      String numExecutors) {
         this.slaveNamePrefix = slaveNamePrefix;
         this.description = description;
         this.setInstanceCapStr(instanceCapStr);
@@ -51,7 +48,6 @@ public class ScriptedCloudSlaveTemplate extends AbstractDescribableImpl<Scripted
         this.labelSet = Label.parse(labels);
         this.remoteFS = remoteFS;
         this.numExecutors = numExecutors;
-        this.mode = mode;
     }
 
     public String getSlaveNamePrefix() {
@@ -102,10 +98,6 @@ public class ScriptedCloudSlaveTemplate extends AbstractDescribableImpl<Scripted
 
     public String getRemoteFS() {
         return remoteFS;
-    }
-
-    public Node.Mode getMode() {
-        return mode;
     }
 
     public String getSecToWaitOnline() {

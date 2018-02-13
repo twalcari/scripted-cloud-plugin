@@ -191,7 +191,7 @@ public class ScriptedCloud extends AbstractCloudImpl {
                     new ScriptedCloudSlave(slaveName, "Instance " + slaveName + " of template " + template.getDescription(),
                             template.getRemoteFS(),
                             template.getNumExecutors(),
-                            template.getMode(),
+                            Node.Mode.NORMAL,
                             template.getLabels(),
                             new JNLPLauncher(),
                             RetentionStrategy.NOOP,
