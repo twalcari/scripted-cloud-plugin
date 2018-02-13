@@ -44,9 +44,9 @@ description="${%Can this slave be used for multiple builds?}"  field="reusable">
     </f:entry>
 
 
-    <f:dropdownList name="slave.delegateLauncher" title="${%Slave launch method}"
+    <f:dropdownList name="slave.delegateLauncher" title="${%Secondary launch method}"
                     help="${descriptor.getHelpFile('launcher')}">
-        <j:forEach var="d" items="${descriptor.getComputerLauncherDescriptors()}" varStatus="loop">
+        <j:forEach var="d" items="${h.getComputerLauncherDescriptors()}" varStatus="loop">
             <f:dropdownListBlock value="${d.clazz.name}" name="${d.displayName}"
                                  selected="${it.delegateLauncher.descriptor==d}"
                                  title="${d.displayName}">
@@ -62,7 +62,6 @@ description="${%Can this slave be used for multiple builds?}"  field="reusable">
             </f:dropdownListBlock>
         </j:forEach>
     </f:dropdownList>
-
 
     <!-- pointless to show this if there's only one option, which is the default -->
     <j:if test="${h.getRetentionStrategyDescriptors().size() gt 1}">

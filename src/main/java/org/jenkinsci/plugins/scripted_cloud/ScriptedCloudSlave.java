@@ -58,7 +58,9 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
 
         this.cloudName = cloudName;
         this.reusable = reusable;
-        this.envVars.addAll(envVars);
+
+        if (envVars != null)
+            this.envVars.addAll(envVars);
     }
 
 

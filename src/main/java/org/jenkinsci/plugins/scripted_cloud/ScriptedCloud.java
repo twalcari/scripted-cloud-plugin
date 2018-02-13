@@ -309,7 +309,8 @@ public class ScriptedCloud extends AbstractCloudImpl {
                 .cmds(shell.buildCommandLine(script))
                 .envs(envVars)
                 .stdout(taskListener)
-                .pwd(root).join();
+                .pwd(root)
+                .join();
 
         if (result != 0) {
             throw new AbortException("The script failed with exit code " + result);
