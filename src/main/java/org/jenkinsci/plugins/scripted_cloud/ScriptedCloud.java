@@ -173,18 +173,7 @@ public class ScriptedCloud extends AbstractCloudImpl {
 
         @Override
         public Node call() throws Exception {
-
-            // Support for Jenkins security
-            String jnlpSecret = "";
-            if (Jenkins.getInstance().isUseSecurity()) {
-                jnlpSecret = jenkins.slaves.JnlpSlaveAgentProtocol.SLAVE_SECRET.mac(slaveName);
-            }
-
-            List<EnvironmentVariable> envVars = new ArrayList<>();
-            if (template.getEnvVars() != null)
-                envVars.addAll(template.getEnvVars());
-            envVars.add(new EnvironmentVariable("JNLP_SECRET", jnlpSecret));
-
+            
             final ScriptedCloudSlave slave =
                     new ScriptedCloudSlave(slaveName, "Instance " + slaveName + " of template " + template.getDescription(),
                             template.getRemoteFS(),
@@ -195,7 +184,7 @@ public class ScriptedCloud extends AbstractCloudImpl {
                             RetentionStrategy.NOOP,
                             Collections.emptyList(),
                             name,
-                            envVars,
+                            template.getEnvVars(),
                             template.getSecToWaitOnline(),
                             template.getReusable());
 
@@ -289,12 +278,18 @@ public class ScriptedCloud extends AbstractCloudImpl {
 
     private void executeCommand(String command, String name, List<EnvironmentVariable> environmentVariables,
                                 TaskListener taskListener, long timeout, TimeUnit timeUnit) throws IOException, InterruptedException {
-        //        //get all environment variables
+
+        // get all environment variables
         Map<String, String> envVars = new HashMap<>();
         environmentVariables.forEach(ev -> envVars.put(ev.getKey(), ev.getValue()));
 
         envVars.put("SLAVE_NAME", name);
         envVars.put("JENKINS_URL", Jenkins.getInstance().getRootUrl());
+
+        // Support for Jenkins security
+        if (Jenkins.getInstance().isUseSecurity()) {
+            envVars.put("JNLP_SECRET", jenkins.slaves.JnlpSlaveAgentProtocol.SLAVE_SECRET.mac(name));
+        }
 
 
         //launch the script
