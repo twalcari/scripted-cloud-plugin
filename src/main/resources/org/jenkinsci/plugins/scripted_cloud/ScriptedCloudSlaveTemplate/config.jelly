@@ -1,0 +1,59 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
+         xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+
+        <f:entry title="${%Slave name prefix}" field="slaveNamePrefix"
+                 description="${%Unique alphanumeric prefix to be used for instances of this template}">
+            <f:textbox/>
+        </f:entry>
+
+        <f:entry title="${%Description}" field="description">
+            <f:textbox/>
+        </f:entry>
+
+        <f:entry title="${%Maximum Instances Count}" field="instanceCapStr"
+                 description="${%Maximum number of slaves to be launched concurrently with this template.}">
+            <f:textbox />
+        </f:entry>
+
+        <f:entry title="${%Labels}" field="labels">
+            <f:textbox/>
+        </f:entry>
+
+        <f:entry title="${%EnvVars}" description="${%List of environment variables to give to start/stop script}">
+            <f:repeatableHeteroProperty field="envVars" hasHeader="true" addCaption="Add Environment Variable"
+                                        deleteCaption="Delete Environment Variable"/>
+        </f:entry>
+
+
+        <f:entry title="${%Wait time}" description="${%Number of seconds to wait for a slave to become online}"
+                 field="secToWaitOnline">
+            <f:textbox default="600"/>
+        </f:entry>
+
+        <f:entry title="${%Reusable}" description="${%Can this slave be used for multiple builds?}" field="reusable">
+            <f:checkbox/>
+        </f:entry>
+
+
+        <f:entry title="${%Remote FS root}" field="remoteFS">
+            <f:textbox/>
+        </f:entry>
+
+        <f:entry title="${%Executors}" field="numExecutors">
+            <f:textbox default="1"/>
+        </f:entry>
+
+        <f:entry title="${%Executors}" field="numPreprovisioned" description="${%Number of preprovisioned slaves for this template}">
+            <f:textbox default="1"/>
+        </f:entry>
+
+
+        <f:slave-mode name="mode" node="${it}"/>
+
+        <!--<f:entry title="">-->
+            <!--<div align="right">-->
+                <!--<f:repeatableDeleteButton/>-->
+            <!--</div>-->
+        <!--</f:entry>-->
+</j:jelly>

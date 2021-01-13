@@ -1,25 +1,41 @@
 scripted-cloud-plugin
 =====================
 
-###Brief
+## About
+With this plugin it is very easy to integrate your own cloud to launch Jenkins slaves. 
+The only requirement is that you are able to start and stop the slaves via a batch script.
+It supports both the definition of static, unique slaves; as dynamic, templated-based ones.
 
-Plugin to run scripts to start/stop VMs remotely.
+![scripted cloud settings example](./config-cloud.png)
 
-###Motivation
+
+## Motivation
 1. You've got several pre-configured VMs to act as slave, their configuration are essentially different
 2. You don't want to have them running 100% time
 3. These VMs are distributed across several clouds
 
-###Overview
+## Overview
 
-This plugin lets you to define your own scripts to run your VMs and stop them whenever they are not needed.
+This plugin lets you to define your own scripts to run your VMs and stops them whenever they are not needed.
 
-The plugin defines new node type "Scripted Cloud Node". 
+The plugin defines a new node type "Scripted Cloud Node". 
 
-These nodes contain VM names (instance id's), snapshot names, cloud type and lots of other nice parameters that could be used to create your own custom deployment\build\autotest process.
+You can define any environment variable to pass on to the script.
 
-###TODO
-1. Add further description and describe how to use the plugin with JNLP Web Start.
+## User Guide
 
-###Plans
-1. To integrate it with any universal VM\Cloud library (e.g. JClouds) to provide users with pre-build templates.
+### General
+
+After installing the plugin, go to `Manage Jenkins` > `Configure System` > `Clouds` to define a new *Scripted Cloud*. 
+You can either directly enter the start- and stop-script there, or enter the path to your scripts on disk.
+
+### Dynamic slaves
+
+When you want the slaves to be dynamically provisioned based on a template, choose `Add Slave Template`. 
+
+
+### Static slaves
+
+To add a node, go to `Manage Jenkins` > `Manage Nodes` > `New Node` and choose `Slave virtual computer running on scripted cloud`. You can configure which scripted cloud to use in the next screen of the wizard.
+
+**Attention:** When `reusable` is turned of, this node will be deleted after the next usage.
