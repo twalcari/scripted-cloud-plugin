@@ -38,4 +38,4 @@ When you want the slaves to be dynamically provisioned based on a template, choo
 
 To add a node, go to `Manage Jenkins` > `Manage Nodes` > `New Node` and choose `Slave virtual computer running on scripted cloud`. You can configure which scripted cloud to use in the next screen of the wizard.
 
-**Attention:** When `reusable` is turned of, this node will be deleted after the next usage.
+**Attention:** When `reusable` is turned off, this node will be deleted after the next usage.
