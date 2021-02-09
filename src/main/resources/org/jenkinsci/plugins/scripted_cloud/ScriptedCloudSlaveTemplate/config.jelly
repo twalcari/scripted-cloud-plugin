@@ -20,6 +20,8 @@
             <f:textbox/>
         </f:entry>
 
+        <f:slave-mode name="mode" node="${it}"/>
+
         <f:entry title="${%EnvVars}" description="${%List of environment variables to give to start/stop script}">
             <f:repeatableHeteroProperty field="envVars" hasHeader="true" addCaption="Add Environment Variable"
                                         deleteCaption="Delete Environment Variable"/>
@@ -49,7 +51,6 @@
         </f:entry>
 
 
-        <f:slave-mode name="mode" node="${it}"/>
 
         <!--<f:entry title="">-->
             <!--<div align="right">-->
