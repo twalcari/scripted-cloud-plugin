@@ -82,7 +82,7 @@ public class ScriptedCloud extends AbstractCloudImpl {
             final List<ScriptedCloudSlaveTemplate> templates = getMatchingTemplates(label);
 
             for (ScriptedCloudSlaveTemplate t : templates) {
-                LOGGER.log(Level.INFO, "Template: " + t.getDescription());
+                LOGGER.log(Level.INFO, String.format("Template: %s", t.getDescription()));
 
                 boolean canProvision = true;
 
@@ -311,7 +311,7 @@ public class ScriptedCloud extends AbstractCloudImpl {
             throw new AbortException("The script failed with exit code " + result);
         }
 
-        LOGGER.log(Level.FINE, "Script for %s finished successfully.");
+        LOGGER.log(Level.FINE, String.format("Script for, %s, finished successfully.", command));
 
     }
 }
