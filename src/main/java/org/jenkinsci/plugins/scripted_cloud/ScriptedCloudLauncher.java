@@ -64,7 +64,7 @@ public class ScriptedCloudLauncher extends DelegatingComputerLauncher {
         }
 
         if (launched) {
-            LOGGER.log(INFO, "Agent has already been launched, activating: %s", computer.getDisplayName());
+            LOGGER.log(INFO, String.format("Agent has been launched, activating: %s", computer.getDisplayName()));
             computer.setAcceptingTasks(true);
             return;
         }
@@ -110,7 +110,7 @@ public class ScriptedCloudLauncher extends DelegatingComputerLauncher {
                     throw new IllegalStateException("Slave did not come online in allowed time");
                 }
             }
-            LOGGER.log(INFO, "Agent has been launched, activating: %s", computer.getDisplayName());
+            LOGGER.log(INFO, String.format("Agent has been launched, activating: %s", computer.getDisplayName()));
 
             computer.setAcceptingTasks(true);
         } catch (Throwable ex) {

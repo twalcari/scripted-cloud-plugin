@@ -10,11 +10,11 @@
     </f:entry>
 
     <f:entry title="${%Batch or a shell script to start machine}" field="startScript">
-        <f:expandableTextbox/>
+        <f:textarea/>
     </f:entry>
 
     <f:entry title="${%Batch or a shell script to stop machine}" field="stopScript">
-        <f:expandableTextbox/>
+        <f:textarea/>
     </f:entry>
 
     <f:entry title="${%Slave Templates}">

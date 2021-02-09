@@ -82,7 +82,7 @@ public class ScriptedCloud extends AbstractCloudImpl {
             final List<ScriptedCloudSlaveTemplate> templates = getMatchingTemplates(label);
 
             for (ScriptedCloudSlaveTemplate t : templates) {
-                LOGGER.log(Level.INFO, "Template: " + t.getDescription());
+                LOGGER.log(Level.INFO, String.format("Template: %s", t.getDescription()));
 
                 boolean canProvision = true;
 
@@ -123,7 +123,7 @@ public class ScriptedCloud extends AbstractCloudImpl {
     }
 
     private int getTemplateInstancesCount(@Nonnull ScriptedCloudSlaveTemplate template) {
-        Computer[] computers = Jenkins.getInstance().getComputers();
+        Computer[] computers = Jenkins.get().getComputers();
 
         int count = 0;
         for (Computer computer : computers){
@@ -138,7 +138,7 @@ public class ScriptedCloud extends AbstractCloudImpl {
     }
 
     private int getInstancesCount() {
-        Computer[] computers = Jenkins.getInstance().getComputers();
+        Computer[] computers = Jenkins.get().getComputers();
 
         int count = 0;
         for (Computer computer : computers){
@@ -188,7 +188,7 @@ public class ScriptedCloud extends AbstractCloudImpl {
                             template.getSecToWaitOnline(),
                             template.getReusable());
 
-            Jenkins.getInstance().addNode(slave);
+            Jenkins.get().addNode(slave);
 
 
             LOGGER.log(Level.INFO, String.format("Asking ScriptedCloud %s to schedule new Jenkins slave %s", name, slaveName));
@@ -284,11 +284,11 @@ public class ScriptedCloud extends AbstractCloudImpl {
         environmentVariables.forEach(ev -> envVars.put(ev.getKey(), ev.getValue()));
 
         envVars.put("SLAVE_NAME", name);
-        envVars.put("JENKINS_URL", Jenkins.getInstance().getRootUrl());
+        envVars.put("JENKINS_URL", Jenkins.get().getRootUrl());
 
         // Support for Jenkins security
-        if (Jenkins.getInstance().isUseSecurity()) {
-            envVars.put("JNLP_SECRET", jenkins.slaves.JnlpSlaveAgentProtocol.SLAVE_SECRET.mac(name));
+        if (Jenkins.get().isUseSecurity()) {
+            envVars.put("JNLP_SECRET", jenkins.slaves.JnlpAgentReceiver.SLAVE_SECRET.mac(name));
         }
 
 
@@ -311,7 +311,7 @@ public class ScriptedCloud extends AbstractCloudImpl {
             throw new AbortException("The script failed with exit code " + result);
         }
 
-        LOGGER.log(Level.FINE, "Script for %s finished successfully.");
+        LOGGER.log(Level.FINE, String.format("Script for, %s, finished successfully.", command));
 
     }
 }

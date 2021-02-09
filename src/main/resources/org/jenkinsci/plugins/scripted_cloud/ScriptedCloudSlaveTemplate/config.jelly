@@ -20,6 +20,8 @@
             <f:textbox/>
         </f:entry>
 
+        <f:slave-mode name="mode" node="${it}"/>
+
         <f:entry title="${%EnvVars}" description="${%List of environment variables to give to start/stop script}">
             <f:repeatableHeteroProperty field="envVars" hasHeader="true" addCaption="Add Environment Variable"
                                         deleteCaption="Delete Environment Variable"/>
@@ -31,11 +33,6 @@
             <f:textbox default="600"/>
         </f:entry>
 
-        <f:entry title="${%Reusable}" description="${%Can this slave be used for multiple builds?}" field="reusable">
-            <f:checkbox/>
-        </f:entry>
-
-
         <f:entry title="${%Remote FS root}" field="remoteFS">
             <f:textbox/>
         </f:entry>
@@ -44,12 +41,14 @@
             <f:textbox default="1"/>
         </f:entry>
 
-        <f:entry title="${%Executors}" field="numPreprovisioned" description="${%Number of preprovisioned slaves for this template}">
-            <f:textbox default="1"/>
+        <f:entry title="${%Number of preprovisioned instances}" field="numPreprovisioned" description="${%Number of preprovisioned instances for this template}">
+            <f:textbox default="0"/>
         </f:entry>
 
+        <f:entry title="${%Reusable}" description="${%Can this slave be used for multiple builds?}" field="reusable">
+            <f:checkbox/>
+        </f:entry>
 
-        <f:slave-mode name="mode" node="${it}"/>
 
         <!--<f:entry title="">-->
             <!--<div align="right">-->

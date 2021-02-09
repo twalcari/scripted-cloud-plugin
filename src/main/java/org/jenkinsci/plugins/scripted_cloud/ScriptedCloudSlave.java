@@ -54,9 +54,7 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
                               List<? extends NodeProperty<?>> nodeProperties,
                               String cloudName, List<EnvironmentVariable> envVars,
                               String secToWaitOnline, Boolean reusable) throws FormException, IOException {
-        super(name, nodeDescription, remoteFS, numExecutors, mode, labelString,
-                new ScriptedCloudLauncher(delegateLauncher, Util.tryParseNumber(secToWaitOnline, 10 * 60).intValue())
-                , retentionStrategy, nodeProperties);
+        super(name, remoteFS, new ScriptedCloudLauncher(delegateLauncher, Util.tryParseNumber(secToWaitOnline, 10 * 60).intValue()) );
 
         this.cloudName = cloudName;
         this.reusable = reusable;
@@ -82,7 +80,7 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
     }
 
     public Cloud getCloud() {
-        return Jenkins.getInstance().getCloud(getCloudName());
+        return Jenkins.get().getCloud(getCloudName());
     }
 
     public String getSecToWaitOnline() {
@@ -101,7 +99,7 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
      */
     @Nonnull
     public ScriptedCloud getScriptedCloud() {
-        Cloud cloud = Jenkins.getInstance().getCloud(getCloudName());
+        Cloud cloud = Jenkins.get().getCloud(getCloudName());
         if (cloud instanceof ScriptedCloud) {
             return (ScriptedCloud) cloud;
         } else {
@@ -248,7 +246,7 @@ public final class ScriptedCloudSlave extends AbstractCloudSlave implements Ephe
 
         public List<ScriptedCloud> getScriptedClouds() {
             List<ScriptedCloud> result = new ArrayList<ScriptedCloud>();
-            for (Cloud cloud : Jenkins.getInstance().clouds) {
+            for (Cloud cloud : Jenkins.get().clouds) {
                 if (cloud instanceof ScriptedCloud) {
                     result.add((ScriptedCloud) cloud);
                 }
