@@ -41,8 +41,8 @@
             <f:textbox default="1"/>
         </f:entry>
 
-        <f:entry title="${%Executors}" field="numPreprovisioned" description="${%Number of preprovisioned slaves for this template}">
-            <f:textbox default="1"/>
+        <f:entry title="${%Number of preprovisioned instances}" field="numPreprovisioned" description="${%Number of preprovisioned instances for this template}">
+            <f:textbox default="0"/>
         </f:entry>
 
         <f:entry title="${%Reusable}" description="${%Can this slave be used for multiple builds?}" field="reusable">
